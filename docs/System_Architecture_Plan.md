@@ -1,7 +1,7 @@
 # System Architecture Plan
 ## Car Rental Website — Version 1
 
-**Document Version:** 1.5.0
+**Document Version:** 1.6.0
 **Date:** August 2026
 **Status:** Final — Approved for Implementation
 **Classification:** Internal Architecture Document
@@ -181,7 +181,8 @@ The admin dashboard is built with **Laravel Filament v5**. Filament generates a 
 
 **Authentication**
 - Filament's built-in admin authentication (email + password)
-- Separate `admins` guard — isolated from public API
+- Existing `App\Models\User` model and Laravel `web` guard
+- Production panel access restricted through Filament's `FilamentUser::canAccessPanel()` contract
 - Logout and password change via Filament profile panel
 
 **Dashboard Overview** (Filament Widgets)
@@ -422,7 +423,7 @@ All data exits the system through:
 |                                  |                                     |
 |  +-------------------------------V----------------------------------+  |
 |  |                     DATA LAYER (Eloquent)                        |  |
-|  |   Car, Category, Faq, Banner, Setting, Admin models              |  |
+|  |   Car, Category, Faq, Banner, Setting, User models               |  |
 |  |   Relationships, Scopes, Casts                                   |  |
 |  +-------------------------------+----------------------------------+  |
 +----------------------------------+-------------------------------------+
@@ -430,7 +431,7 @@ All data exits the system through:
 +--------------------+ +-----------+----------+ +----------------------+
 |    MySQL Database  | |    Redis Cache        | |   File Storage       |
 |                    | |                       | | (Local / S3 Future)  |
-|  - admins          | |  - API Responses      | |                      |
+|  - users           | |  - API Responses      | |                      |
 |  - categories      | |  - Settings           | |  - Car Images        |
 |  - cars            | |  - Sessions           | |  - Banners           |
 |  - car_features    | |  - Rate Limits        | |  - Company Logo      |
@@ -525,7 +526,7 @@ The application is structured into three practical layers. Each layer has a sing
 - Handle soft deletes
 
 **Components:**
-- `Models/Admin.php` — Admin user model
+- `Models/User.php` — Existing Laravel authenticatable model used for Filament access
 - `Models/Car.php` — Car model with category, features, and Spatie media relationship; implements `HasMedia`
 - `Models/CarFeature.php` — Car feature model
 - `Models/Category.php` — Category model
@@ -544,7 +545,7 @@ These are concerns that apply across all layers:
 | Concern | Tool | Location |
 |---------|------|----------|
 | Logging | Laravel Log | Service classes |
-| Error Handling | Laravel Exception Handler | `app/Exceptions/Handler.php` |
+| Error Handling | Laravel 12 exception configuration | `bootstrap/app.php` → `withExceptions()` |
 | Admin Authentication | Filament session-based (Laravel session) | Filament middleware |
 | Caching | Redis via Laravel Cache | Service layer |
 | Validation | Form Request classes | HTTP layer |
@@ -681,13 +682,13 @@ Media handling requires consistent validation, filename generation, storage, and
 
 **V1 Scope:** Single admin account, email/password login. Authentication is handled by Filament's built-in panel authentication — no Sanctum tokens involved for admin access.
 
-**Implementation:** The `Admin` model implements Filament's `HasPanel` interface. Filament manages the login page at `/admin/login`, session handling, and logout natively.
+**Implementation:** The existing `User` model implements Filament's `FilamentUser` contract and restricts production access in `canAccessPanel(Panel $panel)`. Filament manages the login page at `/admin/login`, session handling, and logout natively using Laravel's default `web` guard.
 
-**Database Tables:**
-- `admins` — id, name, email, password, remember_token, last_login_at, last_login_ip, created_at
+**Database Table:**
+- `users` — Laravel's existing authentication table: id, name, email, email_verified_at, password, remember_token, timestamps
 
-**Why a separate `admins` table and not `users`?**
-In Version 2, the `users` table will hold customer accounts. Mixing admin and customer identities in one table creates permission complexity. By separating them from the start, the `admins` guard is completely isolated. In V2, a `customers` table and guard are added alongside the existing `admins` table with no changes required to V1 code.
+**Why reuse `users` in V1?**
+V1 has one trusted Filament operator and no customer login surface. Reusing Laravel's existing authentication model avoids an unnecessary guard, provider, migration, and duplicate credential flow. If V2 introduces customer authentication, its identity and authorization strategy will be designed then without weakening the V1 `canAccessPanel()` restriction.
 
 ### 8.8 Version 2 Module Boundaries (Future)
 
@@ -757,7 +758,7 @@ cars_rental/
 |   |   +-- WhatsAppService.php
 |   |
 |   +-- Models/
-|   |   +-- Admin.php
+|   |   +-- User.php                       # existing Filament-authenticated user
 |   |   +-- Car.php                        # implements HasMedia (Spatie)
 |   |   +-- CarFeature.php
 |   |   +-- Category.php
@@ -765,8 +766,7 @@ cars_rental/
 |   |   +-- Banner.php
 |   |   +-- Setting.php
 |   |
-|   +-- Exceptions/
-|   |   +-- Handler.php
+|   +-- Exceptions/                        # only domain exceptions when needed
 |   |   +-- CarNotFoundException.php
 |   |   +-- MediaUploadException.php
 |   |
@@ -817,15 +817,17 @@ cars_rental/
 |   |       +-- LatestCarsWidget.php
 |   |
 |   +-- Providers/
-|       +-- AppServiceProvider.php
-|       +-- EventServiceProvider.php
-|       +-- AuthServiceProvider.php
+|       +-- AppServiceProvider.php         # rate limits, view composers, app bootstrapping
 |       +-- Filament/
 |           +-- AdminPanelProvider.php      # Registers Filament panel
 |
++-- bootstrap/
+|   +-- app.php                             # web/API routes, middleware, exception rendering
+|   +-- providers.php                       # application provider registration
+|
 +-- database/
 |   +-- migrations/
-|   |   +-- 2024_01_01_create_admins_table.php
+|   |   +-- 0001_01_01_000000_create_users_table.php       # existing Laravel migration
 |   |   +-- 2024_01_02_create_categories_table.php
 |   |   +-- 2024_01_03_create_cars_table.php
 |   |   +-- 2024_01_04_create_car_features_table.php
@@ -835,7 +837,7 @@ cars_rental/
 |   |   +-- [spatie media migration — published via: php artisan vendor:publish --tag="medialibrary-migrations"]
 |   +-- seeders/
 |   |   +-- DatabaseSeeder.php
-|   |   +-- AdminSeeder.php
+|   |   +-- UserSeeder.php
 |   |   +-- CategorySeeder.php
 |   |   +-- SettingSeeder.php
 |   +-- factories/
@@ -1211,7 +1213,7 @@ Filament handles admin authentication natively — no custom auth code required.
 **How it works:**
 - Login page is at `/admin/login` (generated by Filament)
 - Admin submits email and password
-- Laravel authenticates against the `admins` table using the `admin` guard
+- Laravel authenticates the existing `users` table through the default `web` guard
 - On success, a standard Laravel session cookie is issued (HttpOnly, server-managed)
 - All Filament requests include the session cookie automatically — no token management in JavaScript
 - Logout at `/admin/logout` destroys the session
@@ -1227,7 +1229,7 @@ Filament handles admin authentication natively — no custom auth code required.
 2. Filament middleware checks for valid session
 3. No session => redirect to /admin/login
 4. Admin submits email + password
-5. Laravel authenticates via admins guard + Hash::check()
+5. Laravel authenticates via the default web guard + Hash::check()
 6. Session created => redirect to /admin (Filament dashboard)
 7. All subsequent Filament requests: session cookie sent automatically
 ```
@@ -1392,7 +1394,7 @@ V2 should preserve V1 behaviour and minimise breaking changes. Existing V1 model
 - New guard: `customer` in `config/auth.php`
 - New `CustomerAuthController`
 - New routes under `/api/v2/customer/auth/`
-- Separate from `admins` table — no conflicts with V1 authentication
+- Customer authentication remains separate from Filament panel authorization; the final V2 identity model is decided before implementation
 
 ### 14.5 Multi-Branch Support (V2)
 
@@ -1436,7 +1438,7 @@ V1 endpoints remain active. If a version prefix becomes necessary for backward c
 2. Filament middleware checks for a valid session cookie
 3. No valid session → redirect to `/admin/login`
 4. Admin submits email + password via the Filament login form
-5. Laravel authenticates against the `admins` table using `Hash::check()`
+5. Laravel authenticates the configured `User` through the default web guard using `Hash::check()`
 6. On success, a standard Laravel session cookie is issued (HttpOnly, server-managed)
 7. All subsequent Filament requests include the session cookie automatically
 8. Logout at `/admin/logout` destroys the session server-side
@@ -1649,7 +1651,7 @@ Every admin action is logged for audit purposes via the `LogAdminActivity` liste
 
 ### 17.4 Error Monitoring (Production Recommendation)
 
-Integrate with Sentry (recommended) for real-time error tracking. The `Handler.php` `report()` method is the single integration point. Adding Sentry requires only the SDK and `SENTRY_LARAVEL_DSN` in `.env`.
+Integrate with Sentry (recommended) for real-time error tracking through Laravel 12's exception configuration in `bootstrap/app.php`. Adding Sentry requires the SDK and environment-backed configuration.
 
 ---
 
@@ -1943,14 +1945,14 @@ MAIL_FROM_ADDRESS=noreply@example.com
 **Deliverables:**
 - Laravel project scaffolded with correct directory structure
 - Git repository initialised with `.gitignore` and branching strategy
-- Packages installed: CORS, Spatie Sluggable, **Filament v5**, Spatie Media Library
-- Filament panel configured (`AdminPanelProvider`) with `admins` guard and `/admin` path
-- Vite configured with CSS and JS entry points
+- Packages installed: CORS, **Filament v5**, Spatie Media Library; slugs use Laravel's native `Str::slug()` helper
+- Filament panel configured (`AdminPanelProvider`) with the existing `User` model, default `web` guard, and `/admin` path
+- Vite configured with Tailwind CSS v4 and JavaScript entry points
 - Database configured; base migrations created
 - Environment files configured (local, staging, production)
 - NGINX and PHP-FPM configured on staging server
 - Redis configured and tested
-- Admin seeder created and tested
+- Authorized Filament user seeder created and tested
 
 **Acceptance Criteria:**
 - `php artisan serve` returns 200 OK
@@ -1963,7 +1965,7 @@ MAIL_FROM_ADDRESS=noreply@example.com
 ### 21.2 Phase 1 — Data Layer (Week 2)
 
 **Deliverables:**
-- All V1 database migrations written and tested (8 tables only)
+- All V1 domain migrations written and tested; 8 core application tables exist alongside Laravel infrastructure tables
 - All Eloquent models created with relationships, scopes, and casts
 - All seeders with realistic demo data (10 cars, 5 categories, 20 FAQs)
 - All settings seeded with sensible defaults
@@ -2059,21 +2061,18 @@ MAIL_FROM_ADDRESS=noreply@example.com
 
 ## 22. Architectural Decisions
 
-### 22.1 Decision: Separate Admin and Customer Tables
+### 22.1 Decision: Reuse Laravel's Users Table for Filament
 
-**Decision:** Create a separate `admins` table instead of using a single `users` table with roles.
+**Decision:** Use the existing `users` table, `App\Models\User`, and default `web` guard for the V1 Filament operator.
 
 **Alternatives Considered:**
-- Single `users` table with `role` column
-- Single `users` table with role-based pivot table
+- Separate `admins` table and guard
+- Add a role or permissions package in V1
 
 **Chosen Approach Rationale:**
-A unified `users` table with roles introduces permission complexity from day one. By separating tables:
-- The `admins` guard is completely isolated from any future `customers` guard
-- No accidental privilege escalation through role manipulation
-- In V2, a `customers` table is added with no changes to the `admins` table or existing auth code
+V1 has a single trusted operator and no customer authentication. Reusing Laravel's default identity model removes duplicate migrations and auth configuration. Filament production access is explicitly restricted by implementing `FilamentUser::canAccessPanel()` on `User`; possession of a user record alone must not imply panel access.
 
-**Accepted Trade-off:** Two authentication tables instead of one. Minor code duplication in authentication controllers.
+**Accepted Trade-off:** If V2 introduces customer accounts or multiple staff roles, the identity and RBAC strategy must be revisited before those accounts are added.
 
 ### 22.2 Decision: Key-Value Settings Table
 
@@ -2231,10 +2230,10 @@ Pre-creating empty tables that serve no function in V1 adds confusion for develo
 V1 has one admin account. No Role-Based Access Control is implemented. If the business needs a second admin before V2 is started, adding one requires a code change (the policies must be revisited).
 
 **Mitigation:**
-- Laravel Policies are created for every resource even in V1 (returning `true`)
-- The `admins` table has a `role` column (unused but present for V2)
-- Adding a second admin account can be done via database seeder immediately
-- Full RBAC is added in V2 by updating policies only — controllers need no changes
+- Laravel Policies are created for protected resources and follow automatic policy discovery conventions
+- `User::canAccessPanel()` restricts production access to explicitly approved users
+- Adding another operator requires updating the explicit access rule and creating the user intentionally
+- No speculative role column or permissions package is added in V1
 
 ---
 
@@ -2329,17 +2328,15 @@ Backend services, models, and the REST API require no changes for a frontend-onl
 
 This section documents the **8 V1 database tables**. No V2 tables are pre-created. All future tables are added via new migrations when V2 modules are built.
 
-#### `admins` Table
+#### `users` Table
 ```sql
-CREATE TABLE admins (
+CREATE TABLE users (
     id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name             VARCHAR(255) NOT NULL,
     email            VARCHAR(255) UNIQUE NOT NULL,
+    email_verified_at TIMESTAMP NULL,
     password         VARCHAR(255) NOT NULL,
-    role             VARCHAR(50) DEFAULT 'super_admin',  -- reserved for V2 RBAC
     remember_token   VARCHAR(100) NULL,
-    last_login_at    TIMESTAMP NULL,
-    last_login_ip    VARCHAR(45) NULL,
     created_at       TIMESTAMP NULL,
     updated_at       TIMESTAMP NULL
 );
@@ -2477,16 +2474,16 @@ CREATE TABLE settings (
 | Category | Technology | Version | Justification |
 |----------|-----------|---------|---------------|
 | Backend Framework | Laravel | 12.x | Latest stable, extensive ecosystem, active maintenance |
-| Language | PHP | 8.3 | Current stable, strong type system, performance improvements |
+| Language | PHP | 8.2 | Current project runtime; package constraints must remain compatible |
 | Admin Panel | Laravel Filament | 5.x | Server-rendered admin UI built on Livewire; full CRUD in single PHP class |
 | Database | MySQL | 8.0 | Mature, JSON column support, full-text search, wide hosting support |
 | Cache & Queue | Redis | 7.x | In-memory speed, queue support, rate limit tracking |
 | Web Server | NGINX | 1.26 | High performance, efficient static asset serving, reverse proxy to PHP-FPM |
-| Process Manager | PHP-FPM | 8.3 | Standard PHP process manager |
+| Process Manager | PHP-FPM | 8.2 | Matches the current application runtime |
 | Media Library | Spatie Media Library | Latest | Polymorphic file management; Filament integration; manages `media` table |
 | Image Processing | Intervention Image | 3.x | PHP image manipulation, GD and ImageMagick backends |
-| Asset Pipeline | Laravel Vite | — | CSS/JS bundling with HMR in development; content-hashed output for production |
-| Public Frontend | Laravel Blade + Vanilla CSS + Vanilla JS | — | Server-rendered MPA; progressive JS enhancement only |
+| Asset Pipeline | Laravel Vite + `@tailwindcss/vite` | — | Tailwind/JS bundling with HMR in development; content-hashed output for production |
+| Public Frontend | Laravel Blade + Tailwind CSS v4 + Vanilla JS | — | Server-rendered MPA; utility-first responsive styling; progressive JS enhancement only |
 | Task Queue | Laravel Queue + Redis | — | Built-in, Redis backend for reliability |
 | Queue Supervisor | Supervisor | Latest | OS-level process management for queue workers |
 | SSL | Let's Encrypt (Certbot) | Latest | Free, auto-renewing, industry standard |
@@ -2498,7 +2495,6 @@ CREATE TABLE settings (
 |---------|---------|-----------|
 | `filament/filament` | Admin panel framework (Livewire/Blade, CRUD resources, widgets) | Yes |
 | `spatie/laravel-media-library` | Polymorphic file/image management; `media` table; Filament integration | Yes |
-| `spatie/laravel-sluggable` | Automatic slug generation from name fields | Yes |
 | `intervention/image` | Image resizing and thumbnail generation | Recommended |
 | `spatie/laravel-query-builder` | Eloquent query filtering from HTTP params (public REST API) | Recommended |
 | `spatie/laravel-activitylog` | Admin activity audit logging | Recommended |
@@ -2575,10 +2571,10 @@ docker run -d --name redis -p 6379:6379 redis:7-alpine
 | Field | Value |
 |-------|-------|
 | Document Name | System_Architecture_Plan.md |
-| Version | 1.5.0 |
+| Version | 1.6.0 |
 | Created | August 2026 |
 | Last Updated | August 2026 |
 | Status | Final — Approved for Implementation |
-| Summary | Laravel Modular Monolith; Blade MPA public website; Filament v5 admin; public read-only REST API at `/api/*`; 8 V1 database tables; Spatie Media Library for car images; no admin REST API in V1; no static HTML files |
+| Summary | Laravel 12 modular monolith; Blade + Tailwind CSS v4 public MPA; Filament v5 using the existing User model; public read-only REST API at `/api/*`; 8 core V1 tables; Spatie Media Library for car images |
 | Next Review | Upon V2 initiation |
 | Repository Path | `/docs/System_Architecture_Plan.md` |

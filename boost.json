@@ -2,7 +2,7 @@
     "agents": [
         "codex"
     ],
-    "cloud": false,
+    "cloud": true,
     "guidelines": true,
     "mcp": true,
     "nightwatch": false,

@@ -3,7 +3,7 @@
 ---
 
 > **Authoritative Source:** This document is derived from and must remain consistent with
-> `System_Architecture_Plan.md` (v1.3.0). All architectural decisions referenced here
+> `System_Architecture_Plan.md` (v1.6.0). All architectural decisions referenced here
 > are defined in that document. This document defines only the database implementation
 > required to realize Version 1 of the system.
 
@@ -57,7 +57,7 @@ The following principles apply specifically to this database design:
 
 | # | Table | Purpose |
 |---|-------|---------|
-| 1 | `admins` | Admin account for Filament authentication |
+| 1 | `users` | Existing Laravel authentication table used by the V1 Filament operator |
 | 2 | `categories` | Car classification (SUV, Sedan, Luxury, etc.) |
 | 3 | `cars` | Core car entity — the primary content of the website |
 | 4 | `car_features` | Feature tags per car (A/C, GPS, Bluetooth, etc.) |
@@ -66,7 +66,7 @@ The following principles apply specifically to this database design:
 | 7 | `banners` | Hero slider images and content for the homepage |
 | 8 | `settings` | Key-value store for all site configuration and contact info |
 
-**Total: 8 tables.**
+**Total: 8 core application tables.** Laravel infrastructure tables such as `sessions`, `cache`, and queue tables also exist but are outside the domain schema count.
 
 ### Explicitly Excluded from V1
 
@@ -90,9 +90,9 @@ The following entities are **not implemented** in V1. No tables, migrations, mod
 
 ## 4. Entity Overview
 
-### 4.1 `admins`
-**Purpose:** Stores the single admin account used to authenticate into the Filament admin panel.
-**Why it exists:** Filament requires an authenticatable model. A separate `admins` table (rather than a shared `users` table) keeps the admin guard fully isolated from the V2 customer guard.
+### 4.1 `users`
+**Purpose:** Stores the single trusted V1 operator who authenticates into the Filament admin panel.
+**Why it exists:** This is Laravel's existing authentication table and model. Filament uses the default `web` guard, while `User::canAccessPanel()` explicitly restricts production panel access.
 **Required:** Yes — Filament cannot function without it.
 
 ### 4.2 `categories`
@@ -203,19 +203,18 @@ Company information, contact details, and social media links are all stored as s
 
 ---
 
-### 6.1 `admins`
+### 6.1 `users`
 
-**Purpose:** Stores the admin account(s) for Filament panel authentication. V1 has one admin.
+**Purpose:** Laravel's existing authentication table, used for the single V1 Filament operator.
 
 | Column | Data Type | Nullable | Default | Key | Description |
 |--------|-----------|----------|---------|-----|-------------|
 | `id` | `BIGINT UNSIGNED` | NO | auto | PK | Auto-increment primary key |
-| `name` | `VARCHAR(255)` | NO | — | — | Admin display name |
+| `name` | `VARCHAR(255)` | NO | — | — | Operator display name |
 | `email` | `VARCHAR(255)` | NO | — | UNIQUE | Login email address |
+| `email_verified_at` | `TIMESTAMP` | YES | NULL | — | Standard Laravel verification timestamp |
 | `password` | `VARCHAR(255)` | NO | — | — | Bcrypt-hashed password |
 | `remember_token` | `VARCHAR(100)` | YES | NULL | — | Laravel "remember me" token |
-| `last_login_at` | `TIMESTAMP` | YES | NULL | — | Recorded on each successful login |
-| `last_login_ip` | `VARCHAR(45)` | YES | NULL | — | IPv4/IPv6, recorded on each login |
 | `created_at` | `TIMESTAMP` | YES | NULL | — | Laravel standard timestamp |
 | `updated_at` | `TIMESTAMP` | YES | NULL | — | Laravel standard timestamp |
 
@@ -227,10 +226,11 @@ Company information, contact details, and social media links are all stored as s
 - Unique index on `email` (authentication lookup)
 
 **Notes:**
-- Filament uses this table through the `admin` guard configured in `config/auth.php`
-- The `Admin` model implements `FilamentUser` (Filament's panel access interface)
-- No `role` column in V1 — RBAC is not implemented. V2 adds a `role` column via an additive migration when needed
-- No soft delete — admin accounts are permanent; deletion is a manual database operation
+- Filament uses this table through Laravel's existing `web` guard and `users` provider
+- The existing `User` model implements Filament's `FilamentUser` contract
+- `canAccessPanel()` checks the admin panel ID and explicitly configured operator email in production
+- No role column or permissions package is introduced in V1
+- No soft delete
 
 ---
 
@@ -534,7 +534,7 @@ Company information, contact details, and social media links are all stored as s
 ## 7. Relationships
 
 ```
-admins          (no relationships to other V1 tables)
+users           (no relationships to other V1 domain tables)
 
 categories 1──────────────────────────── ∞ cars
                                            |
@@ -614,7 +614,7 @@ The single-column indexes on `cars` (`is_published`, `is_featured`, `category_id
 
 | Table | Required (NOT NULL) Columns |
 |---|---|
-| `admins` | `name`, `email`, `password` |
+| `users` | `name`, `email`, `password` |
 | `categories` | `name`, `slug` |
 | `cars` | `category_id`, `name`, `slug`, `brand`, `model`, `year` |
 | `car_features` | `car_id`, `feature` |
@@ -626,7 +626,7 @@ The single-column indexes on `cars` (`is_published`, `is_featured`, `category_id
 
 | Table | Unique Column(s) | Constraint Purpose |
 |---|---|---|
-| `admins` | `email` | No duplicate admin accounts |
+| `users` | `email` | No duplicate authentication accounts |
 | `categories` | `slug` | Unique URL path |
 | `cars` | `slug` | Unique URL path |
 | `car_features` | `(car_id, feature)` | No duplicate feature labels per car |
@@ -634,7 +634,7 @@ The single-column indexes on `cars` (`is_published`, `is_featured`, `category_id
 
 ### Slug Generation Rules
 
-- Slugs for `categories` and `cars` are auto-generated from the `name` column using `spatie/laravel-sluggable`.
+- Slugs for `categories` and `cars` are generated from the `name` column with Laravel's native `Str::slug()` helper during the model `creating` event.
 - Duplicate slugs are suffixed with a counter: `bmw-5-series`, `bmw-5-series-2`, etc.
 - Slugs must not be changed after a car is published — changing the slug breaks existing bookmarked or shared URLs.
 
@@ -662,7 +662,7 @@ The single-column indexes on `cars` (`is_published`, `is_featured`, `category_id
 
 | Entity | Strategy | Behavior |
 |--------|----------|----------|
-| `admins` | Manual only | Admin accounts are never deleted through the UI. Deletion requires direct database access. |
+| `users` | Manual only | The V1 Filament operator is not deleted through the application UI. |
 | `categories` | Hard delete | RESTRICTED if cars exist. Admin must reassign or delete cars first. |
 | `cars` | Hard delete | Cascade-deletes `car_features`. Application layer deletes associated `media` records and files before database delete. |
 | `car_features` | Cascade delete | Auto-deleted when parent `car` is deleted. Can also be individually deleted by Filament's Repeater component. |
@@ -683,31 +683,31 @@ Soft deletes introduce a `deleted_at` column and change every query to require `
 
 ## 11. Laravel Migration Plan
 
-The following 8 migrations must be written in this exact order to satisfy foreign key dependencies:
+The existing Laravel `users` migration and published Spatie `media` migration are retained. The six missing domain migrations must be created in dependency order:
 
 | # | Migration Name | Creates Table | Depends On |
 |---|----------------|---------------|------------|
-| 1 | `create_admins_table` | `admins` | (none) |
-| 2 | `create_categories_table` | `categories` | (none) |
-| 3 | `create_cars_table` | `cars` | `categories` |
-| 4 | `create_car_features_table` | `car_features` | `cars` |
-| 5 | `create_media_table` | `media` | (none — polymorphic) |
-| 6 | `create_faqs_table` | `faqs` | (none) |
-| 7 | `create_banners_table` | `banners` | (none) |
-| 8 | `create_settings_table` | `settings` | (none) |
+| Existing | `create_users_table` | `users` | (none) |
+| 1 | `create_categories_table` | `categories` | (none) |
+| 2 | `create_cars_table` | `cars` | `categories` |
+| 3 | `create_car_features_table` | `car_features` | `cars` |
+| Existing | `create_media_table` | `media` | (none — polymorphic) |
+| 4 | `create_faqs_table` | `faqs` | (none) |
+| 5 | `create_banners_table` | `banners` | (none) |
+| 6 | `create_settings_table` | `settings` | (none) |
 
 **Migration notes:**
 
-- Migration 3 (`cars`) must declare `RESTRICT` on `category_id` FK — Laravel's `foreignId()->constrained()` defaults to `CASCADE`; this must be overridden explicitly: `->onDelete('restrict')`.
-- Migration 4 (`car_features`) uses `->onDelete('cascade')` for the `car_id` FK, and must declare `$table->unique(['car_id', 'feature'])` for the duplicate-prevention constraint.
-- Migration 5 (`media`) is **not hand-written** — it is published from the Spatie Media Library package via `php artisan vendor:publish --tag="medialibrary-migrations"`.
-- Migration 8 (`settings`) should be followed immediately by a `SettingSeeder` that inserts all 25 default keys.
+- The `cars` migration must declare `RESTRICT` on `category_id` explicitly.
+- The `car_features` migration uses `->onDelete('cascade')` and a composite unique constraint on `car_id` and `feature`.
+- The `media` migration remains the package-published Spatie migration and must not be rewritten.
+- The `settings` migration is followed by `SettingSeeder`, which inserts all 25 default keys.
 
 **Seeder requirements:**
 
 | Seeder | Purpose |
 |--------|---------|
-| `AdminSeeder` | Creates the first admin account |
+| `UserSeeder` | Creates the authorized Filament operator in the existing `users` table |
 | `SettingSeeder` | Inserts all 25 V1 setting keys with default values |
 | `CategorySeeder` | Inserts 5–7 starter categories (SUV, Sedan, Luxury, Economy, Sports) |
 | `CarSeeder` | Inserts 10 demo cars with features and placeholder images |
@@ -734,7 +734,7 @@ The following 8 migrations must be written in this exact order to satisfy foreig
 | Inline toggle: Published | `cars.is_published` TINYINT — toggled via `ToggleColumn` |
 | Inline toggle: Featured | `cars.is_featured` TINYINT — toggled via `ToggleColumn` |
 | Reorder: Sort order | `cars.sort_order` INT — via Filament `ReorderAction` |
-| Slug auto-generation | `cars.slug` via `spatie/laravel-sluggable` on `CarObserver` or model boot |
+| Slug auto-generation | `cars.slug` via Laravel's `Str::slug()` helper in the model `creating` event |
 
 ### `CategoryResource`
 
@@ -795,7 +795,7 @@ The `price_daily`, `price_weekly`, and `price_monthly` columns on `cars` are **i
 
 | Table | Expected Row Count |
 |---|---|
-| `admins` | 1 |
+| `users` | 1 |
 | `categories` | 5–15 |
 | `cars` | 20–200 |
 | `car_features` | 100–1,000 (5–10 per car) |
@@ -852,7 +852,7 @@ The V1 schema is deliberately minimal. The following V2 modules can be added wit
 
 | Table | Rows in Production | Primary Role |
 |---|---|---|
-| `admins` | 1 | Filament authentication |
+| `users` | 1 | Filament authentication through Laravel's default guard |
 | `categories` | 5–15 | Car classification and filtering |
 | `cars` | 20–200 | Core content entity |
 | `car_features` | 100–1,000 | Car feature tags (per-car) |
@@ -873,22 +873,22 @@ The V1 schema is deliberately minimal. The following V2 modules can be added wit
 - `categories.slug` UNIQUE — required for category filtering API
 - `car_features` UNIQUE `(car_id, feature)` — prevents duplicate feature labels
 - `settings.key` UNIQUE — required for key-value integrity
-- `admins.email` UNIQUE — required for authentication
+- `users.email` UNIQUE — required for authentication
 - `cars.category_id` FK RESTRICT — prevents orphaned cars on category delete
 
 ### Key Architectural Decisions
 
 | Decision | Rationale |
 |---|---|
-| 8 tables total | Sufficient for all V1 functional requirements; no V2 tables pre-created |
+| 8 core application tables | Sufficient for all V1 functional requirements; Laravel infrastructure tables are counted separately |
 | Spatie Media Library for car images | Multi-image + ordering + cover selection; Filament integration is native |
 | VARCHAR image columns for banners/categories | Single image per entity; polymorphic table adds complexity with no benefit |
 | JSON column for car specs | Flexible schema for heterogeneous vehicle specifications |
 | Separate `car_features` table with UNIQUE constraint | Enables future filtering; prevents duplicate data |
 | Single `settings` table (key-value) | Handles all company, contact, and SEO settings without individual tables |
 | Hard delete throughout | Matches approved policy in `System_Architecture_Plan.md` §4.2 |
-| `admins` separate from future `customers` table | Isolates admin guard; no role-mixing in V2 |
-| No `admins.role` in V1 | No V2 columns in V1; additive migration adds role when RBAC is needed |
+| Existing `users` table for Filament | Avoids an unnecessary V1 auth model and guard; panel access remains explicit in `canAccessPanel()` |
+| No role column in V1 | Staff RBAC and customer identity design are deferred until their requirements exist |
 | LIKE search instead of FULLTEXT | Sufficient for 20–200 cars; FULLTEXT is a V2 upgrade if needed |
 | Prices nullable, not public | Pricing by WhatsApp; prices stored internally only |
 | No booking storage | Pre-booking form is client-side only; no inquiry data hits the database |
@@ -900,11 +900,11 @@ The V1 schema is deliberately minimal. The following V2 modules can be added wit
 | Field | Value |
 |-------|-------|
 | Document Name | Database_Design.md |
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Created | August 2026 |
 | Last Updated | August 2026 |
-| Source | System_Architecture_Plan.md v1.3.0 |
+| Source | System_Architecture_Plan.md v1.6.0 |
 | Status | Ready for Implementation |
-| Changes from v1.0.0 | Spatie Media Library adopted (media table schema not hand-written); banner/category images use VARCHAR; admins.role removed; UNIQUE(car_id,feature) added; FULLTEXT replaced with LIKE; Section 13 stripped to pricing and slug notes only |
+| Changes from v1.0.0 | Spatie Media Library adopted; existing users table retained for Filament; banner/category images use VARCHAR; UNIQUE(car_id,feature) added; FULLTEXT replaced with LIKE; Section 13 stripped to pricing and slug notes only |
 | Tables Defined | 8 (V1 only) |
 | Next Document | API_Contract.md |

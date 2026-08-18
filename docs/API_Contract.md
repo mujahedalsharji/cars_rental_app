@@ -3,7 +3,7 @@
 ---
 
 > **Authoritative Sources:** This document is derived from and must remain consistent with
-> `System_Architecture_Plan.md` (v1.4.0) and `Database_Design.md` (v1.1.0).
+> `System_Architecture_Plan.md` (v1.6.0) and `Database_Design.md` (v1.2.0).
 > This document defines only the REST API contract.
 > It does not repeat architecture, database design, or implementation details from those documents.
 
@@ -1033,7 +1033,7 @@ The following fields are **never** returned by any public API endpoint:
 | `is_featured` (on list only — returned in detail) | `cars` | Returned in detail, not relevant to exclude |
 | `system.*` settings | `settings` | Internal operational flags |
 | `seo.google_analytics_id` | `settings` | Internal tracking configuration |
-| Any `password`, `remember_token`, `last_login_*` | `admins` | Admin table never exposed |
+| Any `password`, `remember_token`, `email_verified_at` | `users` | Authentication table is never exposed |
 
 ### 12.3 Input Validation
 
@@ -1136,9 +1136,9 @@ This section documents the original inconsistencies found in the source document
 | Field | Value |
 |-------|-------|
 | Document Name | API_Contract.md |
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Created | August 2026 |
-| Sources | System_Architecture_Plan.md v1.4.0, Database_Design.md v1.1.0 |
+| Sources | System_Architecture_Plan.md v1.6.0, Database_Design.md v1.2.0 |
 | Status | Ready for Implementation |
 | Endpoints Defined | 7 (V1 public, read-only) |
 | Next Document | — |

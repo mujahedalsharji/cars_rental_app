@@ -3,9 +3,9 @@
 ---
 
 > **Authoritative Sources:** This document implements the decisions defined in:
-> - `System_Architecture_Plan.md` (v1.4.0)
-> - `Database_Design.md` (v1.1.0)
-> - `API_Contract.md` (v1.1.0)
+> - `System_Architecture_Plan.md` (v1.6.0)
+> - `Database_Design.md` (v1.2.0)
+> - `API_Contract.md` (v1.2.0)
 >
 > This document defines **how** to implement V1. It does not redefine architecture, database design, or API contracts.
 > When this document refers to a field, endpoint, or rule, the source document is the authority on its exact definition.
@@ -121,7 +121,7 @@ cars_rental/
 │   │   └── MediaService.php
 │   │
 │   ├── Models/
-│   │   ├── Admin.php
+│   │   ├── User.php             # existing Filament-authenticated model
 │   │   ├── Car.php
 │   │   ├── CarFeature.php
 │   │   ├── Category.php
@@ -148,9 +148,6 @@ cars_rental/
 │   │       ├── StatsOverviewWidget.php
 │   │       └── LatestCarsWidget.php
 │   │
-│   ├── Exceptions/
-│   │   └── Handler.php
-│   │
 │   ├── Events/
 │   │   ├── CarSaved.php
 │   │   └── CarDeleted.php
@@ -167,16 +164,18 @@ cars_rental/
 │   │
 │   └── Providers/
 │       ├── AppServiceProvider.php
-│       ├── EventServiceProvider.php
-│       ├── AuthServiceProvider.php
 │       └── Filament/
 │           └── AdminPanelProvider.php
 │
+├── bootstrap/
+│   ├── app.php                  # web/API routes, middleware, exception rendering
+│   └── providers.php            # application provider registration
+│
 ├── database/
-│   ├── migrations/              # 8 V1 migrations (see §5)
+│   ├── migrations/              # existing users/media plus 6 V1 domain migrations (see §5)
 │   ├── seeders/
 │   │   ├── DatabaseSeeder.php
-│   │   ├── AdminSeeder.php
+│   │   ├── UserSeeder.php
 │   │   ├── CategorySeeder.php
 │   │   └── SettingSeeder.php
 │   └── factories/
@@ -210,6 +209,12 @@ cars_rental/
 - `app/Contracts/` — no interface layer
 - Any V2 placeholder directories
 
+**Laravel 12 bootstrap rules:**
+- Register `routes/api.php` with the `api:` argument of `Application::configure()->withRouting()` in `bootstrap/app.php`; do not run `php artisan install:api` because V1 does not require Sanctum.
+- Configure middleware aliases and web/API group changes through `withMiddleware()` in `bootstrap/app.php`; there is no application `Http\Kernel`.
+- Configure API exception rendering through `withExceptions()` in `bootstrap/app.php`; do not create a legacy `app/Exceptions/Handler.php`.
+- Use automatic listener and policy discovery for conventional `app/Listeners` and `app/Policies` classes. Do not create `EventServiceProvider` or `AuthServiceProvider` only for registration that Laravel 12 discovers automatically.
+
 ---
 
 ## 4. Application Modules
@@ -236,16 +241,14 @@ V1 consists of five domains. Each domain owns controllers, a service, a model (o
 
 ### 5.1 Migration Execution Order
 
-Migrations must be created in this order to satisfy foreign key dependencies:
+The existing Laravel `users` migration and published Spatie `media` migration are retained. Create the six missing domain migrations in this dependency order:
 
-1. `create_admins_table`
-2. `create_categories_table`
-3. `create_cars_table` — declares `category_id` FK with `->onDelete('restrict')`
-4. `create_car_features_table` — declares `car_id` FK with `->onDelete('cascade')` and `->unique(['car_id', 'feature'])`
-5. `create_media_table` — published from Spatie: `php artisan vendor:publish --tag="medialibrary-migrations"`
-6. `create_faqs_table`
-7. `create_banners_table`
-8. `create_settings_table`
+1. `create_categories_table`
+2. `create_cars_table` — declares `category_id` FK with `->onDelete('restrict')`
+3. `create_car_features_table` — declares `car_id` FK with `->onDelete('cascade')` and `->unique(['car_id', 'feature'])`
+4. `create_faqs_table`
+5. `create_banners_table`
+6. `create_settings_table`
 
 **Critical notes:**
 - The `cars` migration must override Laravel's default `constrained()` cascade to `restrict`: `$table->foreignId('category_id')->constrained()->onDelete('restrict')`
@@ -256,19 +259,19 @@ Migrations must be created in this order to satisfy foreign key dependencies:
 
 ---
 
-#### `Admin`
+#### `User`
 
-**Table:** `admins`
-**Guard:** `admin` (configured in `config/auth.php`)
+**Table:** `users`
+**Guard:** Laravel's existing `web` guard
 
 **Configuration:**
-- Implements `FilamentUser` interface (required by Filament to authorize panel access)
-- `canAccessPanel(Panel $panel): bool` returns `true` for all admin records in V1 (no RBAC)
-- `$fillable`: `name`, `email`, `password` (password is hashed via `bcrypt` before fill)
+- Implements Filament's `FilamentUser` contract
+- `canAccessPanel(Panel $panel): bool` allows only the `admin` panel and the explicitly configured operator email in production
+- `$fillable`: `name`, `email`, `password`; keep Laravel 12's existing `'password' => 'hashed'` cast
 - `$hidden`: `password`, `remember_token`
 - No soft delete
 
-**Purpose:** The `Admin` model is the sole Filament authenticatable. It is never exposed via the public REST API. No public controller interacts with this model.
+**Purpose:** The existing `User` model authenticates the V1 Filament operator. It is never exposed through the public REST API. No public controller interacts with this model.
 
 ---
 
@@ -279,7 +282,7 @@ Migrations must be created in this order to satisfy foreign key dependencies:
 **Configuration:**
 - `$fillable`: `name`, `slug`, `description`, `icon`, `image`, `is_active`, `sort_order`
 - `$casts`: `is_active` → `boolean`, `sort_order` → `integer`
-- Slug generation: implement `Spatie\Sluggable\HasSlug` trait; `getSlugOptions()` generates from `name`, saves to `slug`, does not regenerate on update
+- Slug generation: use Laravel's `Str::slug()` in the model `creating` event; generate from `name` only when `slug` is blank and do not regenerate on update
 - No soft delete
 
 **Relationships:**
@@ -306,7 +309,7 @@ public function scopeOrdered($query)       // ORDER BY sort_order ASC, id ASC
 **Configuration:**
 - `$fillable`: `category_id`, `name`, `slug`, `brand`, `model`, `year`, `color`, `description`, `specifications`, `price_daily`, `price_weekly`, `price_monthly`, `currency`, `is_published`, `is_featured`, `sort_order`, `meta_title`, `meta_description`
 - `$casts`: `specifications` → `array`, `is_published` → `boolean`, `is_featured` → `boolean`, `year` → `integer`, `sort_order` → `integer`, `price_daily` → `decimal:2`, `price_weekly` → `decimal:2`, `price_monthly` → `decimal:2`
-- Slug: `HasSlug` from `spatie/laravel-sluggable`; generated from `name`, does not regenerate on update (slug is permanent once set)
+- Slug: use Laravel's `Str::slug()` in the model `creating` event; generated from `name` only when blank and not regenerated on update
 - Media: implements `HasMedia` and uses `InteractsWithMedia` from `spatie/laravel-medialibrary`
 - No soft delete
 
@@ -416,7 +419,7 @@ Category ──── has many ────────────────�
                                             └── (Spatie) ──→ media rows (collection='car_images')
                                                              (auto-deleted by Spatie on car delete)
 
-Admin       — no relationships
+User        — no V1 domain relationships
 Banner      — standalone
 Faq         — standalone
 Setting     — standalone
@@ -424,14 +427,16 @@ Setting     — standalone
 
 ### 5.4 Slug Strategy
 
-Both `Car` and `Category` use `spatie/laravel-sluggable`.
+Both `Car` and `Category` use Laravel's native `Illuminate\Support\Str::slug()` helper. No third-party slug package is required.
+
+Register a `creating` model event in each model's `booted()` method. When the incoming slug is blank, generate the base slug from `name`, check the same model's `slug` column, and append `-2`, `-3`, and so on until the candidate is available. Keep the database unique index as the final integrity guarantee. An explicitly supplied slug is preserved after validation.
 
 | Behaviour | Configuration |
 |-----------|--------------|
 | Generated from | `name` column |
 | Stored in | `slug` column |
 | Regenerate on update | **No** — slug is permanent once created |
-| Uniqueness | Package appends `-2`, `-3` etc. on collision |
+| Uniqueness | Model logic appends `-2`, `-3`, etc. on collision; database unique index remains authoritative |
 | Public lookup | `Car::where('slug', $slug)->published()->firstOrFail()` |
 
 **Why no regeneration on update:** Changing a published car's slug breaks shared URLs, bookmarks, and any cached links. The admin can manually edit the slug field in Filament only if they explicitly intend to change the URL.
@@ -440,7 +445,7 @@ Both `Car` and `Category` use `spatie/laravel-sluggable`.
 
 | Seeder | Content |
 |--------|---------|
-| `AdminSeeder` | Creates one admin account using credentials from `.env` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) |
+| `UserSeeder` | Creates the authorized Filament user using configured `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` values |
 | `SettingSeeder` | Inserts all 25 V1 setting keys with `null` or sensible default values |
 | `CategorySeeder` | Inserts 5–7 starter categories (SUV, Sedan, Luxury, Economy, Sports) with slugs |
 
@@ -704,8 +709,8 @@ Option A is preferred because it avoids repetition across every controller and t
 |--------------|-------|
 | Panel ID | `admin` |
 | Path | `/admin` |
-| Auth model | `App\Models\Admin` |
-| Auth guard | `admin` |
+| Auth model | Existing `App\Models\User` implementing `FilamentUser` |
+| Auth guard | Laravel's default `web` guard |
 | Login route | `/admin/login` (Filament built-in) |
 | Logout action | Filament built-in |
 | Colors | Match company `primary_color` from settings |
@@ -786,7 +791,7 @@ Option A is preferred because it avoids repetition across every controller and t
 
 #### Slug Auto-Generation
 
-`spatie/laravel-sluggable` handles slug creation on model `creating` event. In the Filament form, the slug field should be pre-filled via an `afterStateUpdated()` hook on the Name field:
+The model `creating` event guarantees a slug for every creation path. In the Filament form, use Laravel's `Str::slug()` in an `afterStateUpdated()` hook on the Name field to pre-fill the editable slug field:
 ```php
 TextInput::make('slug')
     ->unique(ignoreRecord: true)
@@ -917,6 +922,19 @@ The slug is shown and editable so the admin can review it before saving.
 
 ### 9.1 Route Definitions (`routes/api.php`)
 
+Because this project began from Laravel 12's minimal skeleton, create `routes/api.php` and register it explicitly in `bootstrap/app.php`:
+
+```php
+->withRouting(
+    web: __DIR__.'/../routes/web.php',
+    api: __DIR__.'/../routes/api.php',
+    commands: __DIR__.'/../routes/console.php',
+    health: '/up',
+)
+```
+
+Do not use `php artisan install:api` for V1 because that command also installs Sanctum, while every V1 API endpoint is public and read-only.
+
 ```php
 Route::middleware(['throttle:api'])->group(function () {
     Route::get('/cars',              [CarController::class,      'index']);
@@ -932,7 +950,7 @@ Route::middleware(['throttle:api'])->group(function () {
 **Notes:**
 - No `/api/v1/` prefix — base path is `/api` (Laravel's default `api.php` prefix)
 - No authentication middleware on any V1 route
-- Rate limiting is `throttle:api` (60 req/min/IP, defined in `RouteServiceProvider`)
+- Rate limiting is `throttle:api` (60 req/min/IP, defined with `RateLimiter::for('api', ...)` in `AppServiceProvider::boot()`)
 
 ### 9.2 API Controllers
 
@@ -1171,45 +1189,32 @@ Filament uses its own form component validation. Validation rules are defined in
 
 ## 11. Authentication and Authorization
 
-### 11.1 Admin Model
+### 11.1 User Model and Panel Access
 
-The `Admin` model implements Filament's `FilamentUser` interface. The `canAccessPanel()` method returns `true` unconditionally in V1 (single admin, no RBAC).
+The existing `User` model implements Filament's `FilamentUser` contract. Its `canAccessPanel(Panel $panel): bool` method must restrict access to the `admin` panel and the configured V1 operator email. It must not return `true` unconditionally in production.
 
-### 11.2 Auth Guard Configuration (`config/auth.php`)
+### 11.2 Authentication Configuration
 
-```php
-'guards' => [
-    'admin' => [
-        'driver'   => 'session',
-        'provider' => 'admins',
-    ],
-],
-'providers' => [
-    'admins' => [
-        'driver' => 'eloquent',
-        'model'  => App\Models\Admin::class,
-    ],
-],
-```
+Keep Laravel's existing `web` guard and `users` Eloquent provider in `config/auth.php`. Do not add an `admin` guard, an `admins` provider, or a second authenticatable model in V1.
 
-The `admin` guard is completely isolated from the default `web` guard. Public users have no session guard in V1.
+Store the approved operator email in application configuration (for example `config/car-rental.php`, sourced from `ADMIN_EMAIL`) and read it through `config()` from `User::canAccessPanel()`. Never call `env()` directly from the model.
 
 ### 11.3 Filament Authentication Flow
 
 1. Admin navigates to `/admin`
-2. Filament's `PanelMiddleware` checks for valid `admin` guard session
+2. Filament middleware checks for a valid `web` guard session
 3. No session → redirect to `/admin/login`
 4. Admin submits email + password
-5. Laravel authenticates via `Auth::guard('admin')->attempt(['email' => $email, 'password' => $password])`
+5. Laravel authenticates through the default `web` guard
 6. On success: standard Laravel session cookie issued (HttpOnly, CSRF-protected)
 7. All Filament requests use this session — no tokens, no Authorization headers
-8. Logout: `Auth::guard('admin')->logout()` + session invalidation
+8. Logout invalidates the default authenticated session
 
 **No Sanctum tokens are used for admin authentication in V1.**
 
 ### 11.4 Policies
 
-Laravel Policies are registered for all V1 resources. In V1, all policies allow any authenticated admin to perform any action (simple gate check: `auth()->guard('admin')->check()`). Policy stubs exist to make V2 role-based access additive.
+Laravel 12 automatically discovers policies that follow the `App\Policies\{Model}Policy` naming convention. In V1, policies allow the authenticated user only after Filament panel access has been approved. No `AuthServiceProvider` is created solely to register conventional policies.
 
 | Policy | Covers |
 |--------|--------|
@@ -1411,9 +1416,9 @@ Failed jobs are stored in the `failed_jobs` table (default Laravel configuration
 
 ### 16.1 API Error Responses
 
-Override `app/Exceptions/Handler.php` to intercept API route exceptions and return the envelope format defined in `API_Contract.md` §6.4 and §11.
+Configure API exception rendering in Laravel 12's `bootstrap/app.php` through `withExceptions()`. Render the envelope format defined in `API_Contract.md` §6.4 and §11 only when the request matches `api/*` or expects JSON.
 
-**Key overrides in `Handler.php`:**
+**Key render mappings:**
 
 | Exception | HTTP Status | Error Code |
 |-----------|-------------|------------|
@@ -1423,7 +1428,7 @@ Override `app/Exceptions/Handler.php` to intercept API route exceptions and retu
 | `AuthenticationException` (on API routes) | 401 | `UNAUTHENTICATED` |
 | All other `Throwable` | 500 | `SERVER_ERROR` |
 
-The `renderForApi` check: use `$request->expectsJson()` or `$request->is('api/*')` to determine if the exception should be rendered as the envelope JSON or as a standard web error page.
+Use `$request->expectsJson()` or `$request->is('api/*')` to determine whether the exception should be rendered as envelope JSON or a standard web error page.
 
 **Production requirement:** `APP_DEBUG=false` must be set. Stack traces must never appear in API error responses.
 
@@ -1438,7 +1443,7 @@ Custom error pages are placed in `resources/views/errors/404.blade.php`, `500.bl
 
 ### 16.3 Filament Errors
 
-Filament handles its own errors within the admin panel with Livewire's error handling and built-in notifications. No custom override needed beyond the global `Handler.php`.
+Filament handles its own errors within the admin panel with Livewire's error handling and built-in notifications. No custom override is needed beyond Laravel 12's exception configuration.
 
 ### 16.4 Category Delete Restriction
 
@@ -1470,8 +1475,8 @@ DeleteAction::make()
 
 | Event | Log Level | Where |
 |-------|-----------|-------|
-| Admin login failure | `warning` | `Handler.php` or Auth event listener |
-| `500` exceptions | `error` | Laravel default via `Handler.php` |
+| Admin login failure | `warning` | Auth event listener |
+| `500` exceptions | `error` | Laravel default exception reporting |
 | Failed queue jobs | `error` | Laravel queue worker |
 | File deletion failure (`Storage::delete` returns false) | `warning` | `BannerObserver`, `CategoryObserver` |
 | Spatie media deletion failure | `error` | Logged by Spatie internally |
@@ -1495,8 +1500,8 @@ Use Laravel's default structured log format. JSON logging can be configured if l
 
 | Security Requirement | Laravel Implementation |
 |---------------------|----------------------|
-| Admin authentication | Filament session-based auth; `admin` guard; `Hash::check()` + `bcrypt` |
-| CSRF protection | `VerifyCsrfToken` middleware on all web routes; all Blade forms use `@csrf` |
+| Admin authentication | Filament session-based auth using the default `web` guard; `User::canAccessPanel()` restricts production access |
+| CSRF protection | Laravel's default `web` middleware group; all state-changing Blade forms use `@csrf` |
 | Mass assignment | `$fillable` defined on every model; `$guarded = ['*']` alternative not used |
 | SQL injection | All queries use Eloquent/Query Builder with parameterized bindings; raw SQL prohibited |
 | XSS in Blade | Blade `{{ }}` escapes by default; `{!! !!}` only used for trusted admin-sourced rich text |
@@ -1504,11 +1509,11 @@ Use Laravel's default structured log format. JSON logging can be configured if l
 | File upload security | MIME type validation + size limits in `MediaService` and Filament `FileUpload`; UUID filenames; files stored outside `public/` root |
 | Rate limiting on API | `throttle:api` middleware = 60 req/min/IP using Redis counters |
 | HTTPS enforcement | `ForceHttps` middleware redirects all HTTP requests to HTTPS in production |
-| Admin route protection | Filament's `PanelMiddleware` checks `admin` guard session on every request |
+| Admin route protection | Filament authentication middleware checks the web session and `User::canAccessPanel()` |
 | Pricing field protection | `price_*` and `currency` excluded from all API Resources; never in any public JSON response |
 | `system` settings protection | `PublicSettingsResource` explicitly excludes `system` group and `seo.google_analytics_id` |
 | No admin API surface | No admin REST endpoints exist; no `/api/admin/*` routes registered |
-| Error message safety | `APP_DEBUG=false` in production; `Handler.php` returns generic message for 500 errors |
+| Error message safety | `APP_DEBUG=false` in production; `bootstrap/app.php` exception rendering returns a generic message for API 500 errors |
 
 ---
 
@@ -1590,7 +1595,7 @@ Unit tests cover service methods with meaningful business logic. Use mock models
 | `REDIS_*` | Redis connection credentials |
 | `QUEUE_CONNECTION=redis` | Enable Redis queue |
 | `FILESYSTEM_DISK=public` | Default storage disk |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Seeder reads these for admin account |
+| `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Configuration and `UserSeeder` create the approved Filament operator |
 | `MAIL_*` | Optional SMTP credentials for contact form |
 
 ### 20.2 Production Checklist
@@ -1601,7 +1606,7 @@ Unit tests cover service methods with meaningful business logic. Use mock models
 - [ ] `php artisan storage:link`
 - [ ] `php artisan migrate --force`
 - [ ] `php artisan db:seed --class=SettingSeeder`
-- [ ] `php artisan db:seed --class=AdminSeeder`
+- [ ] `php artisan db:seed --class=UserSeeder`
 - [ ] `php artisan db:seed --class=CategorySeeder`
 - [ ] Supervisor configured for queue worker
 - [ ] NGINX configured with `ForceHttps`, `/api/*` → PHP-FPM, `/admin/*` → PHP-FPM, `/*` → PHP-FPM (Blade)
@@ -1621,27 +1626,26 @@ The following 9-phase sequence respects dependencies and delivers a working syst
 
 Tasks:
 1. Configure `.env` (DB, Redis, APP_URL, Filament)
-2. Publish Spatie Media Library migration: `php artisan vendor:publish --tag="medialibrary-migrations"`
-3. Write and run all 8 migrations in order (§5.1)
-4. Write and run seeders: `AdminSeeder`, `SettingSeeder`, `CategorySeeder`
-5. Configure `config/auth.php` with `admin` guard
-6. Configure `AdminPanelProvider` (Filament panel ID, path, model, guard)
+2. Confirm the existing Spatie Media Library migration has run
+3. Write and run the six missing domain migrations in order (§5.1)
+4. Write and run seeders: `UserSeeder`, `SettingSeeder`, `CategorySeeder`
+5. Implement `FilamentUser::canAccessPanel()` on the existing `User` model
+6. Configure `AdminPanelProvider` with panel ID `admin`, path `/admin`, and the default web guard
 7. Verify `/admin/login` works and admin can log in
 
 **Dependency:** Everything else depends on this phase.
 
 ### Phase 2 — Eloquent Models (Days 3–4)
 
-**Goal:** All models configured with correct casts, relationships, scopes, and sluggable.
+**Goal:** All models configured with correct casts, relationships, scopes, and native slug generation.
 
 Tasks:
-1. Install `spatie/laravel-sluggable` if not already present
-2. Create `Admin`, `Category`, `Car`, `CarFeature`, `Faq`, `Banner`, `Setting` models
-3. Configure all `$fillable`, `$casts`, relationships, and scopes per §5.2
-4. Register `HasSlug` on `Car` and `Category`
-5. Register `HasMedia` and `InteractsWithMedia` on `Car` with `car_images` collection
-6. Register `BannerObserver`, `CategoryObserver` in `AppServiceProvider`
-7. Write model unit tests
+1. Create `Category`, `Car`, `CarFeature`, `Faq`, `Banner`, `Setting` models and update the existing `User` model for Filament access
+2. Configure all `$fillable`, `$casts`, relationships, and scopes per §5.2
+3. Implement native `Str::slug()` generation and collision suffixing in the `Car` and `Category` creating events
+4. Register `HasMedia` and `InteractsWithMedia` on `Car` with `car_images` collection
+5. Register `BannerObserver`, `CategoryObserver` in `AppServiceProvider`
+6. Write model unit tests, including blank slug, duplicate name, explicit slug, and stable slug-on-update cases
 
 ### Phase 3 — Service Layer (Days 5–6)
 
@@ -1692,7 +1696,7 @@ Tasks:
 2. Create all 5 API Resource classes
 3. Register routes in `routes/api.php` with `throttle:api`
 4. Implement `CarListRequest` validation
-5. Implement `Handler.php` API error format
+5. Implement the API error envelope through `bootstrap/app.php` → `withExceptions()`
 6. Write all API feature tests, including:
    - Prices never in response
    - `system` settings group never in response
@@ -1753,7 +1757,7 @@ Tasks:
 | Fleet management | Additive columns on `cars`: `availability_status`, `license_plate`, `vin` |
 | API versioning | Introduce `/api/v2/` prefix group in `routes/api.php` when breaking changes are needed; V1 routes remain active |
 | Image conversions | Add `registerMediaConversions()` to `Car` model with WebP conversions; queue the jobs |
-| RBAC | Add `role` column to `admins` via additive migration; update Policies to check roles |
+| RBAC | Add an explicit authorization model to `users` (role column or permissions package) only when multiple staff roles are required; update policies accordingly |
 | Notifications | New Laravel `Notification` classes + existing queue worker handles async delivery |
 | Multi-language | Add JSON columns or translation tables; existing `system.app_locale` setting already seeded |
 
@@ -1776,7 +1780,7 @@ Before declaring V1 backend complete, verify all items:
 - [ ] Models contain only relationships, scopes, casts, accessors
 
 ### Database
-- [ ] Exactly 8 tables: `admins`, `categories`, `cars`, `car_features`, `media`, `faqs`, `banners`, `settings`
+- [ ] Core V1 tables include `users`, `categories`, `cars`, `car_features`, `media`, `faqs`, `banners`, and `settings` in addition to Laravel infrastructure tables
 - [ ] `car_images` table does NOT exist
 - [ ] No V2 placeholder tables or columns
 - [ ] `cars.category_id` FK uses `ON DELETE RESTRICT`
@@ -1797,7 +1801,8 @@ Before declaring V1 backend complete, verify all items:
 - [ ] Rate limiting applied to all `/api/*` routes
 
 ### Filament Admin
-- [ ] Admin uses session authentication (not Sanctum tokens)
+- [ ] Filament uses the existing `User` model and session authentication (not Sanctum tokens)
+- [ ] `User::canAccessPanel()` restricts production access explicitly
 - [ ] Car image upload uses `SpatieMediaLibraryFileUpload` in `car_images` collection
 - [ ] Category delete is blocked if cars exist
 - [ ] `ManageSettings` page covers all 6 approved groups
@@ -1831,9 +1836,9 @@ Before declaring V1 backend complete, verify all items:
 | Field | Value |
 |-------|-------|
 | Document Name | Backend_Development_Plan.md |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Created | August 2026 |
-| Sources | System_Architecture_Plan.md v1.4.0, Database_Design.md v1.1.0, API_Contract.md v1.1.0 |
+| Sources | System_Architecture_Plan.md v1.6.0, Database_Design.md v1.2.0, API_Contract.md v1.2.0 |
 | Status | Ready for Implementation |
 | Phase Count | 9 phases, ~22 working days |
 | Next Document | Frontend_Development_Plan.md |

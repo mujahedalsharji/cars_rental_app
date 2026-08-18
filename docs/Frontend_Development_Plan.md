@@ -3,10 +3,10 @@
 ---
 
 > **Authoritative Sources:** This document implements the frontend decisions defined by:
-> - `System_Architecture_Plan.md` (v1.4.0)
-> - `Database_Design.md` (v1.1.0)
-> - `API_Contract.md` (v1.1.0)
-> - `Backend_Development_Plan.md` (v1.0.0)
+> - `System_Architecture_Plan.md` (v1.6.0)
+> - `Database_Design.md` (v1.2.0)
+> - `API_Contract.md` (v1.2.0)
+> - `Backend_Development_Plan.md` (v1.1.0)
 >
 > This document defines the frontend presentation layer only.
 > It does not redefine architecture, database design, API contracts, or backend implementation.
@@ -112,7 +112,7 @@ No `fetch()`, `axios`, or `XMLHttpRequest` calls are made to `/api/*` from any B
 | Layer | Technology | Justification |
 |-------|-----------|---------------|
 | Templating | Laravel Blade | Approved in `System_Architecture_Plan.md`; native PHP server rendering; SEO-optimal |
-| CSS | Vanilla CSS (project-owned) | No CSS framework specified; full control; no third-party lock-in |
+| CSS | Tailwind CSS v4 | Already installed; mobile-first utilities, CSS-first theme tokens, and strong RTL support |
 | JavaScript | Vanilla JavaScript (ES2020+) | Progressive enhancement only; no framework needed for MPA interactions |
 | Asset pipeline | Laravel Vite | Laravel-native; handles CSS/JS bundling, cache-busting, HMR in dev |
 | Icons | SVG inline or CSS icon font | To be confirmed by UI/UX designer; SVG preferred for accessibility |
@@ -120,7 +120,7 @@ No `fetch()`, `axios`, or `XMLHttpRequest` calls are made to `/api/*` from any B
 
 **Technologies explicitly NOT used:**
 - React, Vue, Angular, Next.js, Nuxt — no SPA framework
-- Tailwind CSS, Bootstrap, Material UI — no CSS framework
+- Bootstrap, Material UI, and other competing CSS frameworks — Tailwind CSS v4 is the single styling system
 - Alpine.js, HTMX — not needed for the interaction scope of this project
 - Redux, Pinia, Zustand — no state management library
 - webpack (standalone) — Vite is the asset pipeline
@@ -187,38 +187,7 @@ resources/views/
 resources/
 │
 ├── css/
-│   ├── app.css                   # Main CSS entry point (imports all layers)
-│   ├── base/
-│   │   ├── reset.css             # CSS reset / normalize
-│   │   ├── typography.css        # Font loading, base text styles
-│   │   ├── variables.css         # CSS custom properties (colors, spacing, etc.)
-│   │   └── global.css            # html, body, links, lists, images
-│   ├── layout/
-│   │   ├── header.css
-│   │   ├── navigation.css
-│   │   ├── footer.css
-│   │   └── container.css         # Max-width container and grid helpers
-│   ├── components/
-│   │   ├── buttons.css
-│   │   ├── cards.css             # Car card styles
-│   │   ├── gallery.css           # Image gallery and lightbox
-│   │   ├── forms.css             # All form element styles
-│   │   ├── accordion.css         # FAQ accordion
-│   │   ├── carousel.css          # Hero banner carousel
-│   │   ├── pagination.css
-│   │   ├── breadcrumbs.css
-│   │   ├── badges.css            # Category badge, feature badge
-│   │   ├── alerts.css
-│   │   └── social.css            # Social icon links
-│   ├── pages/
-│   │   ├── home.css              # Page-specific overrides
-│   │   ├── cars.css
-│   │   ├── car-detail.css
-│   │   ├── faq.css
-│   │   ├── contact.css
-│   │   └── booking.css
-│   └── utilities/
-│       └── helpers.css           # Minimal utility classes only where justified
+│   └── app.css                   # Tailwind import, @theme tokens, base rules, and rare custom CSS
 │
 ├── js/
 │   ├── app.js                    # Main JS entry point (imports all modules)
@@ -238,7 +207,7 @@ resources/
 
 ### 4.3 Vite Configuration (`vite.config.js`)
 
-The Vite configuration uses Laravel's official `laravel-vite-plugin`:
+The Vite configuration uses Laravel's official `laravel-vite-plugin` and `@tailwindcss/vite`:
 
 ```
 Input files:
@@ -253,7 +222,7 @@ Production:  `npm run build` — outputs hashed filenames for cache-busting
 Blade usage: @vite(['resources/css/app.css', 'resources/js/app.js'])
 ```
 
-**No per-page JS bundles:** V1 has one CSS entry point and one JS entry point. Page-specific behavior is handled by CSS class state (e.g., `.page--cars`) and JavaScript checking `document.body.dataset.page` if needed. This avoids over-engineering asset splitting for a small MPA.
+**No per-page bundles:** V1 has one Tailwind CSS entry point and one JavaScript entry point. Tailwind scans Blade and JavaScript sources and emits only the utilities used by the application. Page-specific behavior is initialized by JavaScript modules only when their target element exists.
 
 ---
 
@@ -518,9 +487,9 @@ Renders:
 ### 6.4 Component Naming Convention
 
 - Blade component files: `kebab-case.blade.php`
-- Component `class` attributes: `c-{component-name}` (e.g., `c-car-card`, `c-gallery`)
-- Page `class` on `<body>`: `page page--{page-name}` (e.g., `page page--cars`)
-- State classes: `is-{state}` (e.g., `is-active`, `is-open`, `is-loading`)
+- Components expose an optional `class` attribute so callers can merge Tailwind utilities cleanly
+- Use `data-page="cars"` on `<body>` only when JavaScript needs page identification
+- Use semantic `data-state`, `aria-expanded`, `aria-current`, and native element state before inventing custom state classes
 
 ---
 
@@ -675,148 +644,73 @@ These are available in all Blade views through the layout without each controlle
 
 ---
 
-## 8. CSS Architecture
+## 8. Tailwind CSS Architecture
 
-### 8.1 Naming Convention
+### 8.1 Utility and Component Strategy
 
-**BEM-lite:** Block-Element-Modifier for components; flat for utilities.
+- Blade markup uses Tailwind v4 utility classes directly.
+- Repeated UI is extracted into Blade components rather than duplicated or replaced with a parallel BEM stylesheet.
+- Use `gap-*` for sibling spacing and mobile-first responsive variants such as `md:` and `lg:`.
+- JavaScript state uses semantic `data-*` and ARIA attributes. Tailwind variants style those states where practical.
+- Custom CSS is reserved for behavior that utilities cannot express clearly, such as complex gallery or carousel transitions.
+- Do not introduce Bootstrap, BEM component layers, or a second utility system.
 
-| Pattern | Example |
-|---------|---------|
-| Block | `.c-car-card` |
-| Element | `.c-car-card__image` |
-| Modifier | `.c-car-card--featured` |
-| Layout | `.l-header`, `.l-container` |
-| Page | `.p-home`, `.p-cars` |
-| State | `.is-active`, `.is-open` |
-| Utility | `.u-sr-only` (screen-reader only) |
+### 8.2 CSS-First Theme Tokens
 
-Prefix meanings:
-- `c-` — component
-- `l-` — layout
-- `p-` — page-specific
-- `u-` — utility
-- `is-` — JavaScript-toggled state
-
-### 8.2 CSS Custom Properties (Design Tokens)
-
-All design tokens are defined in `base/variables.css` as CSS custom properties. This ensures consistency and makes the designer's theme easy to apply.
+Design tokens are defined in `resources/css/app.css` using Tailwind v4's `@theme` directive. The generated CSS variables keep branding consistent across utilities and any small custom rules.
 
 **Token categories:**
 ```css
-:root {
+@import 'tailwindcss';
+
+@theme {
   /* Colors — populated by UI/UX designer */
-  --color-primary:        ;  /* Main brand color */
-  --color-primary-dark:   ;  /* Hover state */
-  --color-secondary:      ;  /* Accent color */
-  --color-text:           ;  /* Body text */
-  --color-text-muted:     ;  /* Secondary text */
-  --color-bg:             ;  /* Page background */
-  --color-surface:        ;  /* Card/panel background */
-  --color-border:         ;  /* Border color */
-  --color-success:        ;
-  --color-error:          ;
-  --color-warning:        ;
+  --color-brand:          ;
+  --color-brand-dark:     ;
+  --color-accent:         ;
+  --color-surface:        ;
+  --color-muted:          ;
 
   /* Typography */
-  --font-arabic:          ;  /* Arabic body font */
-  --font-size-base:       1rem;
-  --font-size-sm:         0.875rem;
-  --font-size-lg:         1.125rem;
-  --font-size-xl:         1.25rem;
-  --font-size-2xl:        1.5rem;
-  --font-size-3xl:        2rem;
-  --line-height-body:     1.7;   /* Arabic text benefits from generous line height */
-  --line-height-heading:  1.3;
+  --font-sans:            ;  /* Arabic-compatible family */
 
   /* Spacing */
-  --spacing-xs:   0.25rem;
-  --spacing-sm:   0.5rem;
-  --spacing-md:   1rem;
-  --spacing-lg:   1.5rem;
-  --spacing-xl:   2rem;
-  --spacing-2xl:  3rem;
-  --spacing-3xl:  4rem;
-
-  /* Layout */
-  --container-max:  1200px;
-  --container-pad:  1rem;
-
-  /* Radii */
-  --radius-sm:  4px;
-  --radius-md:  8px;
-  --radius-lg:  16px;
-
-  /* Shadows */
-  --shadow-sm:  ;
-  --shadow-md:  ;
-  --shadow-lg:  ;
-
-  /* Transitions */
-  --transition-fast:    150ms ease;
-  --transition-normal:  250ms ease;
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --container-7xl: 75rem;
 }
 ```
 
 **Values are set by the UI/UX designer.** The frontend developer implements the token system; the designer fills in the values.
 
-### 8.3 Layer Organization
+### 8.3 `app.css` Organization
 
-CSS is organized in this import order within `app.css`:
+Keep the CSS entry point small and explicit:
 
 ```css
-/* 1. Base */
-@import 'base/reset.css';
-@import 'base/variables.css';
-@import 'base/typography.css';
-@import 'base/global.css';
+@import 'tailwindcss';
 
-/* 2. Layout */
-@import 'layout/container.css';
-@import 'layout/header.css';
-@import 'layout/navigation.css';
-@import 'layout/footer.css';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
 
-/* 3. Components */
-@import 'components/buttons.css';
-@import 'components/cards.css';
-@import 'components/gallery.css';
-@import 'components/forms.css';
-@import 'components/accordion.css';
-@import 'components/carousel.css';
-@import 'components/pagination.css';
-@import 'components/breadcrumbs.css';
-@import 'components/badges.css';
-@import 'components/alerts.css';
-@import 'components/social.css';
+@theme {
+  /* Project design tokens */
+}
 
-/* 4. Pages */
-@import 'pages/home.css';
-@import 'pages/cars.css';
-@import 'pages/car-detail.css';
-@import 'pages/faq.css';
-@import 'pages/contact.css';
-@import 'pages/booking.css';
+@layer base {
+  /* Arabic typography and document-wide defaults only */
+}
 
-/* 5. Utilities */
-@import 'utilities/helpers.css';
+@layer components {
+  /* Rare complex rules that are clearer than repeated utilities */
+}
 ```
 
-### 8.4 RTL in CSS
+### 8.4 RTL with Tailwind
 
-Use CSS Logical Properties throughout. Never use `left`/`right` when a logical equivalent exists.
-
-| Physical Property | Use Instead |
-|-------------------|------------|
-| `margin-left` | `margin-inline-start` |
-| `margin-right` | `margin-inline-end` |
-| `padding-left` | `padding-inline-start` |
-| `padding-right` | `padding-inline-end` |
-| `text-align: left` | `text-align: start` |
-| `border-left` | `border-inline-start` |
-| `float: left` | `float: inline-start` |
-
-When `direction: rtl` is set on `<html>`, logical properties automatically flip. No separate RTL stylesheet is needed.
+Set `<html lang="ar" dir="rtl">` and prefer logical utilities such as `ms-*`, `me-*`, `ps-*`, `pe-*`, `start-*`, `end-*`, `text-start`, and `text-end`. Use `rtl:` or `ltr:` variants only when a component genuinely needs direction-specific behavior. Do not create a separate RTL stylesheet.
 
 ---
 
@@ -973,7 +867,7 @@ Exact breakpoint values are confirmed by the UI/UX designer's design system. Wor
 | `lg` | ≥ 1024px | Laptops, small desktops |
 | `xl` | ≥ 1280px | Large desktops |
 
-Defined as CSS custom properties or a small breakpoint map in `variables.css`. Use `@media (min-width: var(--bp-md))` pattern.
+Use Tailwind's mobile-first `sm:`, `md:`, `lg:`, and `xl:` variants. Override breakpoint theme variables in `app.css` only if the approved design requires non-default values.
 
 ### 10.3 Layout Behaviour Per Page
 
@@ -1008,18 +902,9 @@ Every page rendered by the master layout includes:
 
 This is set in `layouts/app.blade.php` and applies to all public pages.
 
-### 11.2 CSS Logical Properties
+### 11.2 Tailwind Logical Utilities
 
-As defined in §8.4, CSS Logical Properties are used throughout. This is not optional — it is the primary RTL implementation strategy. No separate `rtl.css` file is needed.
-
-Examples of correct vs. incorrect CSS:
-```css
-/* ❌ Hard-coded direction */
-.c-car-card { margin-left: 1rem; }
-
-/* ✅ Logical property — flips with dir="rtl" */
-.c-car-card { margin-inline-start: 1rem; }
-```
+As defined in §8.4, use Tailwind's logical utilities throughout. Prefer `ms-4` over `ml-4`, `me-4` over `mr-4`, `ps-4` over `pl-4`, and `text-start` over `text-left`. Use `rtl:` and `ltr:` variants only for genuinely directional details such as arrow orientation. No separate `rtl.css` file is needed.
 
 ### 11.3 Typography
 
@@ -1075,7 +960,7 @@ The backend (Spatie Media Library) provides fully-resolved public URLs. Blade vi
         width="400"
         height="300"
         loading="lazy"
-        class="c-car-card__image"
+        class="aspect-[4/3] h-auto w-full object-cover"
     >
 @else
     <img
@@ -1084,7 +969,7 @@ The backend (Spatie Media Library) provides fully-resolved public URLs. Blade vi
         width="400"
         height="300"
         loading="lazy"
-        class="c-car-card__image c-car-card__image--placeholder"
+        class="aspect-[4/3] h-auto w-full bg-slate-100 object-cover"
     >
 @endif
 ```
@@ -1094,15 +979,10 @@ The `components/car-gallery` component receives `$car->getMedia('car_images')` s
 
 ### 12.2 `width` and `height` Attributes
 
-Always set `width` and `height` on `<img>` elements to prevent Cumulative Layout Shift (CLS). Use the intended display dimensions, not the file dimensions. CSS then controls actual visual sizing:
+Always set `width` and `height` on `<img>` elements to prevent Cumulative Layout Shift (CLS). Use the intended display dimensions, not the file dimensions. Tailwind controls the visual sizing:
 
-```css
-.c-car-card__image {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-}
+```html
+<img class="aspect-[4/3] h-auto w-full object-cover" width="800" height="600" alt="...">
 ```
 
 ### 12.3 Responsive Images
@@ -1484,8 +1364,8 @@ The single JS bundle is small by design. No framework is loaded. Estimated produ
 ### 16.2 CSS Optimization
 
 - Vite production build minifies and autoprefixes CSS
-- No unused CSS frameworks are loaded
-- CSS custom properties reduce duplication
+- Tailwind scans project sources and emits only used utilities
+- `@theme` variables reduce duplication and keep brand values consistent
 - Target CSS bundle size: under 30 KB gzipped
 
 ### 16.3 Image Performance
@@ -1750,12 +1630,12 @@ This sequence is coordinated with `Backend_Development_Plan.md` §21 phases. Fro
 
 ### Phase 1 — Frontend Foundation (Parallel with Backend Phase 1–2)
 
-**Goal:** Vite configured, CSS architecture set up, master layout working.
+**Goal:** Tailwind CSS v4 and Vite configured, theme tokens established, master layout working.
 
 Tasks:
-1. Configure `vite.config.js` (Laravel Vite plugin, CSS/JS entry points)
-2. Create `resources/css/` directory structure and import chain
-3. Define CSS custom properties in `base/variables.css` (placeholder values until designer delivers tokens)
+1. Confirm `vite.config.js` uses Laravel Vite and `@tailwindcss/vite`
+2. Keep `resources/css/app.css` as the single Tailwind CSS entry point
+3. Define placeholder brand, font, breakpoint, radius, and shadow tokens with `@theme`
 4. Create `resources/js/app.js` with module import structure
 5. Create `layouts/app.blade.php` with `<html lang="ar" dir="rtl">`, Vite assets, `@yield`/`@stack` slots
 6. Implement `partials/header.blade.php` and `partials/footer.blade.php` with static content
@@ -1771,7 +1651,7 @@ Tasks:
 Tasks:
 1. Implement `partials/nav.blade.php` and `partials/mobile-nav.blade.php`
 2. Implement `navigation.js` (mobile toggle, keyboard trap, Escape close)
-3. Style header, navigation, and footer using designer's tokens
+3. Style header, navigation, and footer with Tailwind utilities and the shared `@theme` tokens
 4. Implement `components/cta-whatsapp.blade.php`
 5. Implement `components/social-links.blade.php`
 6. Implement `components/alert.blade.php`
@@ -1785,7 +1665,7 @@ Tasks:
 **Goal:** Home, Car Listing, and Car Detail pages fully implemented.
 
 Tasks:
-1. Implement `components/car-card.blade.php` and card CSS
+1. Implement `components/car-card.blade.php` with Tailwind utilities
 2. Implement `pages/home.blade.php` — hero banners, featured cars, FAQ preview, CTAs
 3. Implement `components/car-gallery.blade.php` and `gallery.js`
 4. Implement `components/car-specs.blade.php` and `components/feature-list.blade.php`
@@ -1880,7 +1760,7 @@ This boundary defines who owns what. Neither side reaches into the other's domai
 | WhatsApp message generation | `whatsapp.js` | Backend (no server-side submission) |
 | Page routing | `routes/web.php` | JavaScript |
 | HTML structure | Blade templates | JavaScript DOM manipulation |
-| CSS / visual styling | Frontend CSS | Backend controllers |
+| CSS / visual styling | Tailwind utilities, `@theme`, and minimal custom CSS | Backend controllers |
 | Accessibility attributes | Blade + CSS + JS | Backend |
 | SEO meta tag values | Blade templates (data from backend) | JavaScript (not SSR-friendly) |
 | Image upload and storage | Spatie / `MediaService` | Frontend |
@@ -2001,9 +1881,9 @@ Before declaring V1 frontend complete, verify all items:
 | Field | Value |
 |-------|-------|
 | Document Name | Frontend_Development_Plan.md |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Created | August 2026 |
-| Sources | System_Architecture_Plan.md v1.4.0, Database_Design.md v1.1.0, API_Contract.md v1.1.0, Backend_Development_Plan.md v1.0.0 |
+| Sources | System_Architecture_Plan.md v1.6.0, Database_Design.md v1.2.0, API_Contract.md v1.2.0, Backend_Development_Plan.md v1.1.0 |
 | Status | Ready for Implementation |
 | Phase Count | 7 phases, coordinated with backend 9-phase plan |
 | Next Document | — |
