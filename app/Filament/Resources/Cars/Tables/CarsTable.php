@@ -62,7 +62,7 @@ class CarsTable
                     ->trueLabel('Featured')
                     ->falseLabel('Not Featured'),
             ])
-            ->reorderRecordsUsing('sort_order')
+            ->reorderable('sort_order')
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),

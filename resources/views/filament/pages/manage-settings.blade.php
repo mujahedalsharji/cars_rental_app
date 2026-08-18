@@ -2,12 +2,10 @@
     <x-filament-panels::form wire:submit="save">
         {{ $this->form }}
 
-        <x-filament-panels::form.actions
-            :actions="[
-                \Filament\Actions\Action::make('save')
-                    ->label(__('filament-panels::pages/pages.form.actions.save.label'))
-                    ->submit('save'),
-            ]"
-        />
+        <div class="fi-form-actions">
+            <x-filament::button type="submit">
+                Save
+            </x-filament::button>
+        </div>
     </x-filament-panels::form>
 </x-filament-panels::page>

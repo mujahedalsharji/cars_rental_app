@@ -37,7 +37,7 @@ class CategoriesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([])
-            ->reorderRecordsUsing('sort_order')
+            ->reorderable('sort_order')
             ->recordActions([
                 EditAction::make(),
 

@@ -32,7 +32,7 @@ class FaqsTable
                     ->sortable(),
             ])
             ->filters([])
-            ->reorderRecordsUsing('sort_order')
+            ->reorderable('sort_order')
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),

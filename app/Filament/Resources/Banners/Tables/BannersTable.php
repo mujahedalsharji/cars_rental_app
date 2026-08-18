@@ -18,6 +18,7 @@ class BannersTable
         return $table
             ->columns([
                 ImageColumn::make('image')
+                    ->disk('public')
                     ->square(),
 
                 TextColumn::make('title')
@@ -36,7 +37,7 @@ class BannersTable
                     ->sortable(),
             ])
             ->filters([])
-            ->reorderRecordsUsing('sort_order')
+            ->reorderable('sort_order')
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
