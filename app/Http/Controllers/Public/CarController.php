@@ -27,7 +27,7 @@ class CarController extends Controller
     public function show(string $slug)
     {
         $car = $this->carService->findBySlug($slug);
-        $whatsappNumber = $this->settingService->get('contact.whatsapp');
+        $whatsappNumber = $this->settingService->get('contact.whatsapp_number');
 
         return view('pages.cars.show', compact('car', 'whatsappNumber'));
     }

@@ -23,10 +23,11 @@ class CarService
         $search = $filters['search'] ?? null;
         $featured = $filters['featured'] ?? null;
         $perPage = (int) ($filters['per_page'] ?? 12);
+        $page = (int) ($filters['page'] ?? 1);
 
-        $cacheKey = "cars:list:{$category}:{$search}:{$featured}:{$perPage}:".request()->get('page', 1);
+        $cacheKey = "cars:v{$this->cacheVersion()}:list:{$category}:{$search}:{$featured}:{$perPage}:{$page}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($category, $search, $featured, $perPage): LengthAwarePaginator {
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($category, $search, $featured, $perPage, $page): LengthAwarePaginator {
             $query = Car::published()->ordered()->with(['category', 'features']);
 
             if ($category) {
@@ -34,14 +35,18 @@ class CarService
             }
 
             if ($search) {
-                $query->where('name', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search): void {
+                    $query
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('brand', 'like', "%{$search}%");
+                });
             }
 
             if ($featured !== null) {
                 $query->where('is_featured', (bool) $featured);
             }
 
-            return $query->paginate($perPage);
+            return $query->paginate(perPage: $perPage, page: $page);
         });
     }
 
@@ -50,7 +55,7 @@ class CarService
      */
     public function findBySlug(string $slug): Car
     {
-        $cacheKey = "cars:slug:{$slug}";
+        $cacheKey = "cars:v{$this->cacheVersion()}:slug:{$slug}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL, fn () => Car::published()
             ->with(['category', 'features'])
@@ -66,7 +71,7 @@ class CarService
      */
     public function getFeatured(int $limit = 8): Collection
     {
-        $cacheKey = "cars:featured:{$limit}";
+        $cacheKey = "cars:v{$this->cacheVersion()}:featured:{$limit}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL, fn () => Car::published()
             ->featured()
@@ -83,6 +88,12 @@ class CarService
      */
     public function clearCache(): void
     {
-        Cache::flush();
+        $this->cacheVersion();
+        Cache::increment('cars:cache_version');
+    }
+
+    private function cacheVersion(): int
+    {
+        return (int) Cache::rememberForever('cars:cache_version', fn (): int => 1);
     }
 }

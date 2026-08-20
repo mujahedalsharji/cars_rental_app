@@ -7,20 +7,51 @@ use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Tabs;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ManageSettings extends Page implements HasForms
 {
     use InteractsWithForms;
+
+    /** @var array<string, string> */
+    private const SETTING_FIELDS = [
+        'company_name' => 'company.name',
+        'company_tagline' => 'company.tagline',
+        'company_description' => 'company.description',
+        'company_logo' => 'company.logo',
+        'company_about_text' => 'company.about_text',
+        'contact_phone_primary' => 'contact.phone_primary',
+        'contact_phone_secondary' => 'contact.phone_secondary',
+        'contact_email' => 'contact.email',
+        'contact_address' => 'contact.address',
+        'contact_whatsapp_number' => 'contact.whatsapp_number',
+        'social_facebook_url' => 'social.facebook_url',
+        'social_instagram_url' => 'social.instagram_url',
+        'social_twitter_url' => 'social.twitter_url',
+        'social_youtube_url' => 'social.youtube_url',
+        'social_tiktok_url' => 'social.tiktok_url',
+        'social_linkedin_url' => 'social.linkedin_url',
+        'seo_site_title' => 'seo.site_title',
+        'seo_meta_description' => 'seo.meta_description',
+        'seo_meta_keywords' => 'seo.meta_keywords',
+        'seo_google_analytics_id' => 'seo.google_analytics_id',
+        'appearance_favicon' => 'appearance.favicon',
+        'appearance_primary_color' => 'appearance.primary_color',
+        'appearance_secondary_color' => 'appearance.secondary_color',
+        'system_maintenance_mode' => 'system.maintenance_mode',
+        'system_app_locale' => 'system.app_locale',
+    ];
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
@@ -38,19 +69,16 @@ class ManageSettings extends Page implements HasForms
 
     public function mount(SettingService $settingService): void
     {
-        $allSettings = $settingService->all();
+        $formData = [];
 
-        $flatData = [];
-        foreach ($allSettings as $group => $settings) {
-            foreach ($settings as $key => $value) {
-                $flatData[$group.'_'.$key] = $value;
-            }
+        foreach (self::SETTING_FIELDS as $field => $settingKey) {
+            $formData[$field] = $settingService->get($settingKey);
         }
 
-        $this->form->fill($flatData);
+        $this->form->fill($formData);
     }
 
-    public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([
@@ -65,7 +93,12 @@ class ManageSettings extends Page implements HasForms
                                     ->label('Logo')
                                     ->image()
                                     ->disk('public')
-                                    ->directory('settings'),
+                                    ->directory('settings')
+                                    ->maxSize(5120)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->getUploadedFileNameForStorageUsing(
+                                        fn (TemporaryUploadedFile $file): string => Str::uuid().'.'.Str::lower($file->getClientOriginalExtension())
+                                    ),
                                 Textarea::make('company_about_text')->label('About Text'),
                             ]),
 
@@ -75,17 +108,17 @@ class ManageSettings extends Page implements HasForms
                                 TextInput::make('contact_phone_secondary')->label('Phone Secondary')->maxLength(100),
                                 TextInput::make('contact_email')->label('Email')->email()->maxLength(255),
                                 Textarea::make('contact_address')->label('Address'),
-                                TextInput::make('contact_whatsapp')->label('WhatsApp Number')->maxLength(100),
+                                TextInput::make('contact_whatsapp_number')->label('WhatsApp Number')->maxLength(100),
                             ]),
 
                         Tabs\Tab::make('Social')
                             ->schema([
-                                TextInput::make('social_facebook')->label('Facebook URL')->url()->maxLength(255),
-                                TextInput::make('social_instagram')->label('Instagram URL')->url()->maxLength(255),
-                                TextInput::make('social_twitter')->label('Twitter URL')->url()->maxLength(255),
-                                TextInput::make('social_youtube')->label('YouTube URL')->url()->maxLength(255),
-                                TextInput::make('social_tiktok')->label('TikTok URL')->url()->maxLength(255),
-                                TextInput::make('social_linkedin')->label('LinkedIn URL')->url()->maxLength(255),
+                                TextInput::make('social_facebook_url')->label('Facebook URL')->url()->maxLength(255),
+                                TextInput::make('social_instagram_url')->label('Instagram URL')->url()->maxLength(255),
+                                TextInput::make('social_twitter_url')->label('Twitter URL')->url()->maxLength(255),
+                                TextInput::make('social_youtube_url')->label('YouTube URL')->url()->maxLength(255),
+                                TextInput::make('social_tiktok_url')->label('TikTok URL')->url()->maxLength(255),
+                                TextInput::make('social_linkedin_url')->label('LinkedIn URL')->url()->maxLength(255),
                             ]),
 
                         Tabs\Tab::make('SEO')
@@ -102,7 +135,12 @@ class ManageSettings extends Page implements HasForms
                                     ->label('Favicon')
                                     ->image()
                                     ->disk('public')
-                                    ->directory('settings'),
+                                    ->directory('settings')
+                                    ->maxSize(5120)
+                                    ->acceptedFileTypes(['image/x-icon', 'image/png', 'image/svg+xml'])
+                                    ->getUploadedFileNameForStorageUsing(
+                                        fn (TemporaryUploadedFile $file): string => Str::uuid().'.'.Str::lower($file->getClientOriginalExtension())
+                                    ),
                                 ColorPicker::make('appearance_primary_color')->label('Primary Color'),
                                 ColorPicker::make('appearance_secondary_color')->label('Secondary Color'),
                             ]),
@@ -127,12 +165,9 @@ class ManageSettings extends Page implements HasForms
         $state = $this->form->getState();
 
         $bulkUpdate = [];
-        foreach ($state as $fieldKey => $value) {
-            // Convert something like company_name back to company.name
-            $parts = explode('_', $fieldKey, 2);
-            if (count($parts) === 2) {
-                $dbKey = $parts[0].'.'.$parts[1];
-                $bulkUpdate[$dbKey] = $value;
+        foreach (self::SETTING_FIELDS as $field => $settingKey) {
+            if (array_key_exists($field, $state)) {
+                $bulkUpdate[$settingKey] = $state[$field];
             }
         }
 

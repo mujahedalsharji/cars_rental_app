@@ -12,16 +12,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // ── Admin user ─────────────────────────────────────────────────────────
-        User::firstOrCreate(
-            ['email' => 'admin@admin.com'],
-            [
-                'name' => 'Admin',
-                'password' => bcrypt('cars1234'),
-            ]
-        );
+        $adminEmail = config('car_rental.admin_email');
+        $adminPassword = config('car_rental.admin_password');
 
-        // ── Domain seeders ─────────────────────────────────────────────────────
+        if (is_string($adminEmail) && $adminEmail !== '' && is_string($adminPassword) && $adminPassword !== '') {
+            User::updateOrCreate(
+                ['email' => $adminEmail],
+                [
+                    'name' => 'Admin',
+                    'password' => $adminPassword,
+                ]
+            );
+        } else {
+            $this->command?->warn('Admin user was not seeded because ADMIN_EMAIL or ADMIN_PASSWORD is missing.');
+        }
+
         $this->call([
             SettingSeeder::class,
             CategorySeeder::class,

@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\Banners\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class BannerForm
 {
@@ -28,7 +30,12 @@ class BannerForm
                             ->image()
                             ->disk('public')
                             ->directory('banners')
-                            ->required(),
+                            ->maxSize(5120)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->getUploadedFileNameForStorageUsing(
+                                fn (TemporaryUploadedFile $file): string => Str::uuid().'.'.Str::lower($file->getClientOriginalExtension())
+                            )
+                            ->nullable(),
 
                         TextInput::make('cta_text')
                             ->label('CTA Text')

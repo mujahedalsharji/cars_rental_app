@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FaqResource;
 use App\Services\FaqService;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class FaqController extends Controller
 {
@@ -12,10 +13,10 @@ class FaqController extends Controller
         protected FaqService $faqService
     ) {}
 
-    public function index()
+    public function index(): AnonymousResourceCollection
     {
         $faqs = $this->faqService->getActive();
 
-        return FaqResource::collection($faqs);
+        return FaqResource::collection($faqs)->additional(['success' => true]);
     }
 }

@@ -18,8 +18,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/ping', fn () => response()->json(['status' => 'ok']));
-
 Route::middleware(['throttle:api'])->group(function () {
     Route::get('/cars', [CarController::class,      'index']);
     Route::get('/cars/{slug}', [CarController::class,      'show']);

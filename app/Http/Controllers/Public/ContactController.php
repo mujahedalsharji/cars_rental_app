@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Web\ContactFormRequest;
 use App\Services\SettingService;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class ContactController extends Controller
 {
@@ -19,14 +20,9 @@ class ContactController extends Controller
         return view('pages.contact', compact('contactSettings'));
     }
 
-    public function submit(Request $request)
+    public function submit(ContactFormRequest $request): RedirectResponse
     {
-        // For a simple implementation without a database write
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'message' => 'required|string|max:2000',
-        ]);
+        $request->validated();
 
         return back()->with('success', 'Thank you for your message. We will get back to you soon.');
     }

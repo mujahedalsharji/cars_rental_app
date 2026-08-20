@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\CarListRequest;
 use App\Http\Resources\CarDetailResource;
 use App\Http\Resources\CarListingResource;
 use App\Services\CarService;
-use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class CarController extends Controller
 {
@@ -14,17 +16,17 @@ class CarController extends Controller
         protected CarService $carService
     ) {}
 
-    public function index(Request $request)
+    public function index(CarListRequest $request): AnonymousResourceCollection
     {
-        $cars = $this->carService->getAllPublished($request->only(['category', 'search', 'page', 'per_page']));
+        $cars = $this->carService->getAllPublished($request->validated());
 
-        return CarListingResource::collection($cars);
+        return CarListingResource::collection($cars)->additional(['success' => true]);
     }
 
-    public function show(string $slug)
+    public function show(string $slug): JsonResource
     {
         $car = $this->carService->findBySlug($slug);
 
-        return new CarDetailResource($car);
+        return (new CarDetailResource($car))->additional(['success' => true]);
     }
 }

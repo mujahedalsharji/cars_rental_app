@@ -18,11 +18,11 @@ class CarDetailResource extends JsonResource
             'year' => $this->year,
             'color' => $this->color,
             'is_featured' => $this->is_featured,
-            'category' => new CategoryResource($this->whenLoaded('category')),
-            'cover_image' => $this->whenNotNull(
-                $this->getFirstMedia('car_images'),
-                fn ($media) => ['url' => $media->getUrl(), 'order' => $media->order_column]
-            ),
+            'category' => [
+                'id' => $this->category->id,
+                'name' => $this->category->name,
+                'slug' => $this->category->slug,
+            ],
             'description' => $this->description,
             'specifications' => $this->specifications,
             'features' => $this->features->pluck('feature')->toArray(),

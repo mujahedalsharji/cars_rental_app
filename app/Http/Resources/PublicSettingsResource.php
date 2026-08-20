@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 
 class PublicSettingsResource extends JsonResource
@@ -18,13 +19,13 @@ class PublicSettingsResource extends JsonResource
         }
 
         return [
-            'company' => array_merge($settings['company'] ?? [], [
+            'company' => array_merge(Arr::except($settings['company'] ?? [], ['logo']), [
                 'logo_url' => ($val = $settings['company']['logo'] ?? null) ? Storage::url($val) : null,
             ]),
             'contact' => $settings['contact'] ?? [],
             'social' => $settings['social'] ?? [],
             'seo' => $seo,
-            'appearance' => array_merge($settings['appearance'] ?? [], [
+            'appearance' => array_merge(Arr::except($settings['appearance'] ?? [], ['favicon']), [
                 'favicon_url' => ($val = $settings['appearance']['favicon'] ?? null) ? Storage::url($val) : null,
             ]),
         ];

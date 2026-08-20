@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +13,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Car extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use HasFactory, InteractsWithMedia;
 
     /** @var list<string> */
     protected $fillable = [
@@ -96,7 +97,7 @@ class Car extends Model implements HasMedia
 
     public function features(): HasMany
     {
-        return $this->hasMany(CarFeature::class);
+        return $this->hasMany(CarFeature::class)->orderBy('id');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
@@ -124,6 +125,8 @@ class Car extends Model implements HasMedia
      */
     public function scopeInCategory($query, string $slug): void
     {
-        $query->whereHas('category', fn ($q) => $q->where('slug', $slug));
+        $query->whereHas('category', fn ($q) => $q
+            ->where('slug', $slug)
+            ->where('is_active', true));
     }
 }

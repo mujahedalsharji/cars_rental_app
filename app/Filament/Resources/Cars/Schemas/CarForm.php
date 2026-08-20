@@ -6,15 +6,16 @@ use App\Models\Category;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
-use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class CarForm
 {
@@ -104,7 +105,11 @@ class CarForm
                             ->reorderable()
                             ->image()
                             ->maxFiles(20)
+                            ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->getUploadedFileNameForStorageUsing(
+                                fn (TemporaryUploadedFile $file): string => Str::uuid().'.'.Str::lower($file->getClientOriginalExtension())
+                            )
                             ->columnSpanFull(),
                     ]),
 

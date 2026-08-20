@@ -17,7 +17,7 @@ class BookingController extends Controller
     public function show(Request $request)
     {
         $cars = $this->carService->getAllPublished(['per_page' => 100]);
-        $whatsappNumber = $this->settingService->get('contact.whatsapp');
+        $whatsappNumber = $this->settingService->get('contact.whatsapp_number');
 
         $selectedCar = null;
         if ($request->has('car')) {

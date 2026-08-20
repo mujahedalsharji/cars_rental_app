@@ -4,12 +4,18 @@ namespace App\Services;
 
 use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class SettingService
 {
     private const CACHE_KEY = 'settings:all';
 
     private const CACHE_TTL = 86400; // 24 hours
+
+    /** @var list<string> */
+    private const IMAGE_KEYS = ['company.logo', 'appearance.favicon'];
+
+    public function __construct(private MediaService $mediaService) {}
 
     /**
      * Get a single setting value by key, type-cast according to its `type` column.
@@ -36,7 +42,8 @@ class SettingService
         $grouped = [];
 
         foreach ($flat as $key => $row) {
-            $grouped[$row['settings_group']][$key] = $this->cast($row['value'], $row['type']);
+            $shortKey = Str::after($key, '.');
+            $grouped[$row['settings_group']][$shortKey] = $this->cast($row['value'], $row['type']);
         }
 
         return $grouped;
@@ -57,7 +64,7 @@ class SettingService
      */
     public function set(string $key, mixed $value): void
     {
-        Setting::where('key', $key)->update(['value' => $value]);
+        $this->updateValue($key, $value);
         $this->clearCache();
     }
 
@@ -69,7 +76,7 @@ class SettingService
     public function setBulk(array $keyValues): void
     {
         foreach ($keyValues as $key => $value) {
-            Setting::where('key', $key)->update(['value' => $value]);
+            $this->updateValue($key, $value);
         }
 
         $this->clearCache();
@@ -114,5 +121,24 @@ class SettingService
             'json' => json_decode((string) $value, true),
             default => (string) $value,
         };
+    }
+
+    private function updateValue(string $key, mixed $value): void
+    {
+        $setting = Setting::query()->where('key', $key)->first();
+
+        if ($setting === null) {
+            return;
+        }
+
+        $previousValue = $setting->value;
+        $setting->update(['value' => $value]);
+
+        if (in_array($key, self::IMAGE_KEYS, true)
+            && is_string($previousValue)
+            && $previousValue !== ''
+            && $previousValue !== $value) {
+            $this->mediaService->deleteImage($previousValue);
+        }
     }
 }

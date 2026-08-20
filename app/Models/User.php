@@ -61,7 +61,11 @@ class User extends Authenticatable implements FilamentUser
         }
 
         if (app()->isProduction()) {
-            return $this->email === config('car-rental.admin_email');
+            $adminEmail = config('car_rental.admin_email');
+
+            return is_string($adminEmail)
+                && $adminEmail !== ''
+                && hash_equals($adminEmail, $this->email);
         }
 
         return true;

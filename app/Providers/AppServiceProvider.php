@@ -3,13 +3,23 @@
 namespace App\Providers;
 
 use App\Models\Banner;
+use App\Models\Car;
+use App\Models\CarFeature;
+use App\Models\Category;
+use App\Models\Faq;
 use App\Observers\BannerObserver;
+use App\Observers\CarFeatureObserver;
+use App\Observers\CarObserver;
+use App\Observers\CategoryObserver;
+use App\Observers\FaqObserver;
+use App\Observers\MediaObserver;
 use App\Services\SettingService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,8 +36,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // ── Observers ─────────────────────────────────────────────────────────
         Banner::observe(BannerObserver::class);
+        Car::observe(CarObserver::class);
+        CarFeature::observe(CarFeatureObserver::class);
+        Category::observe(CategoryObserver::class);
+        Faq::observe(FaqObserver::class);
+        Media::observe(MediaObserver::class);
 
         // ── API Rate Limiter ──────────────────────────────────────────────────
         // 60 requests per minute per IP address.
