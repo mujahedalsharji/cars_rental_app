@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\ContactFormRequest;
 use App\Services\SettingService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class ContactController extends Controller
 {
@@ -13,7 +14,7 @@ class ContactController extends Controller
         protected SettingService $settingService
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $contactSettings = $this->settingService->getGroup('contact');
 
@@ -24,6 +25,6 @@ class ContactController extends Controller
     {
         $request->validated();
 
-        return back()->with('success', 'Thank you for your message. We will get back to you soon.');
+        return back()->with('success', 'شكراً لتواصلك. سيعود إليك فريقنا في أقرب وقت.');
     }
 }

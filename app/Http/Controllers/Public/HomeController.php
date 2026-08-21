@@ -7,6 +7,7 @@ use App\Services\BannerService;
 use App\Services\CarService;
 use App\Services\FaqService;
 use App\Services\SettingService;
+use Illuminate\View\View;
 
 class HomeController extends Controller
 {
@@ -17,7 +18,7 @@ class HomeController extends Controller
         protected SettingService $settingService
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $banners = $this->bannerService->getActive();
         $featuredCars = $this->carService->getFeatured(8);

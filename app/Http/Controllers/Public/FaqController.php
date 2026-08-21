@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Services\FaqService;
+use Illuminate\View\View;
 
 class FaqController extends Controller
 {
@@ -11,7 +12,7 @@ class FaqController extends Controller
         protected FaqService $faqService
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $faqs = $this->faqService->getActive();
 

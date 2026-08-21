@@ -26,4 +26,17 @@ class ContactFormRequest extends FormRequest
             'message' => ['required', 'string', 'max:5000'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'يرجى كتابة الاسم الكامل.',
+            'email.required' => 'يرجى كتابة البريد الإلكتروني.',
+            'email.email' => 'يرجى كتابة بريد إلكتروني صحيح.',
+            'message.required' => 'يرجى كتابة رسالتك.',
+        ];
+    }
 }

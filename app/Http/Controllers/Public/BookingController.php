@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Services\CarService;
 use App\Services\SettingService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BookingController extends Controller
 {
@@ -14,17 +16,17 @@ class BookingController extends Controller
         protected SettingService $settingService
     ) {}
 
-    public function show(Request $request)
+    public function show(Request $request): View
     {
         $cars = $this->carService->getAllPublished(['per_page' => 100]);
         $whatsappNumber = $this->settingService->get('contact.whatsapp_number');
 
         $selectedCar = null;
-        if ($request->has('car')) {
+        if ($request->filled('car')) {
             try {
-                $selectedCar = $this->carService->findBySlug($request->car);
-            } catch (\Exception $e) {
-                // If invalid car is passed, default to null
+                $selectedCar = $this->carService->findBySlug($request->string('car')->toString());
+            } catch (ModelNotFoundException) {
+                $selectedCar = null;
             }
         }
 

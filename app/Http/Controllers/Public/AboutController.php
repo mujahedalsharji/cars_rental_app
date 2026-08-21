@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Services\SettingService;
+use Illuminate\View\View;
 
 class AboutController extends Controller
 {
@@ -11,7 +12,7 @@ class AboutController extends Controller
         protected SettingService $settingService
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $aboutText = $this->settingService->get('company.about_text');
 

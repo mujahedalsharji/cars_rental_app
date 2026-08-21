@@ -14,8 +14,8 @@ class SettingSeeder extends Seeder
     {
         $settings = [
             // ── Company ──────────────────────────────────────────────────────
-            ['key' => 'company.name',         'value' => 'Cars Rental',      'type' => 'string', 'settings_group' => 'company',     'description' => 'Company display name'],
-            ['key' => 'company.tagline',       'value' => 'Drive in Style',   'type' => 'string', 'settings_group' => 'company',     'description' => 'Short marketing tagline'],
+            ['key' => 'company.name',         'value' => 'فخامة مسافر',      'type' => 'string', 'settings_group' => 'company',     'description' => 'Company display name'],
+            ['key' => 'company.tagline',       'value' => 'رحلة فاخرة تليق بضيوف المملكة',   'type' => 'string', 'settings_group' => 'company',     'description' => 'Short marketing tagline'],
             ['key' => 'company.description',   'value' => null,               'type' => 'text',   'settings_group' => 'company',     'description' => 'About us text'],
             ['key' => 'company.logo',          'value' => null,               'type' => 'string', 'settings_group' => 'company',     'description' => 'File path to company logo'],
             ['key' => 'company.about_text',    'value' => null,               'type' => 'text',   'settings_group' => 'company',     'description' => 'Longer about us content'],
@@ -36,7 +36,7 @@ class SettingSeeder extends Seeder
             ['key' => 'social.linkedin_url',   'value' => null, 'type' => 'string', 'settings_group' => 'social', 'description' => 'LinkedIn page URL'],
 
             // ── SEO ───────────────────────────────────────────────────────────
-            ['key' => 'seo.site_title',           'value' => 'Cars Rental', 'type' => 'string', 'settings_group' => 'seo', 'description' => 'Default browser tab title'],
+            ['key' => 'seo.site_title',           'value' => 'فخامة مسافر', 'type' => 'string', 'settings_group' => 'seo', 'description' => 'Default browser tab title'],
             ['key' => 'seo.meta_description',     'value' => null,          'type' => 'string', 'settings_group' => 'seo', 'description' => 'Default meta description'],
             ['key' => 'seo.meta_keywords',        'value' => null,          'type' => 'string', 'settings_group' => 'seo', 'description' => 'Default meta keywords'],
             ['key' => 'seo.google_analytics_id',  'value' => null,          'type' => 'string', 'settings_group' => 'seo', 'description' => 'Google Analytics tracking ID'],

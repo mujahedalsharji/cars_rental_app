@@ -7,6 +7,7 @@ use App\Services\CarService;
 use App\Services\CategoryService;
 use App\Services\SettingService;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class CarController extends Controller
 {
@@ -16,7 +17,7 @@ class CarController extends Controller
         protected SettingService $settingService
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $categories = $this->categoryService->getActive();
         $cars = $this->carService->getAllPublished($request->only(['category', 'search', 'page', 'per_page']));
@@ -24,7 +25,7 @@ class CarController extends Controller
         return view('pages.cars.index', compact('cars', 'categories'));
     }
 
-    public function show(string $slug)
+    public function show(string $slug): View
     {
         $car = $this->carService->findBySlug($slug);
         $whatsappNumber = $this->settingService->get('contact.whatsapp_number');
