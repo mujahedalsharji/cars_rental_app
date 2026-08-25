@@ -9,7 +9,7 @@
         <div class="hero-vignette absolute inset-0 -z-20"></div>
         <div class="absolute inset-0 -z-10 bg-gradient-to-r from-ink/35 via-transparent to-ink/25"></div>
 
-        <div class="mx-auto flex min-h-[690px] max-w-7xl items-center justify-center px-5 pb-28 pt-20 text-center lg:px-8" data-reveal>
+        <div class="mx-auto flex min-h-[690px] max-w-7xl flex-col items-center justify-between px-5 pb-8 pt-16 text-center lg:px-8" data-reveal>
             <div class="max-w-4xl">
                 <p class="mx-auto inline-flex items-center gap-3 rounded-full border border-gold/35 bg-black/30 px-4 py-2 text-xs font-bold text-gold-light backdrop-blur-md sm:text-sm">
                     <x-heroicon-o-sparkles class="size-4" />
@@ -19,16 +19,16 @@
                     رحلة فاخرة<br><span class="gold-text">تليق بضيوف المملكة</span>
                 </h1>
                 <p class="mx-auto mt-6 max-w-2xl text-lg font-medium leading-9 text-white/80 sm:text-xl">خدمة سائق خاص بأسطول فاخر للمطارات، والتنقل بين المدن، والمناسبات الخاصة.</p>
-                <div class="mt-9 flex flex-col justify-center gap-4 sm:flex-row">
-                    <a href="{{ route('cars.index') }}" class="gold-surface inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl px-8 font-bold text-ink shadow-xl shadow-black/25 transition hover:-translate-y-0.5 hover:brightness-110">
-                        استعرض السيارات
-                        <x-heroicon-o-arrow-left class="size-5" />
-                    </a>
-                    <a href="{{ route('booking') }}" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-gold/60 bg-black/30 px-8 font-bold text-white backdrop-blur-md transition hover:bg-gold hover:text-ink">
-                        احجز رحلتك
-                        <x-heroicon-o-calendar-days class="size-5" />
-                    </a>
-                </div>
+            </div>
+            <div class="flex flex-col justify-center gap-4 sm:flex-row">
+                <a href="{{ route('cars.index') }}" class="gold-surface inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl px-8 font-bold text-ink shadow-xl shadow-black/25 transition hover:-translate-y-0.5 hover:brightness-110">
+                    استعرض السيارات
+                    <x-heroicon-o-arrow-left class="size-5" />
+                </a>
+                <a href="{{ route('booking') }}" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-gold/60 bg-black/30 px-8 font-bold text-white backdrop-blur-md transition hover:bg-gold hover:text-ink">
+                    احجز رحلتك
+                    <x-heroicon-o-calendar-days class="size-5" />
+                </a>
             </div>
         </div>
     </section>

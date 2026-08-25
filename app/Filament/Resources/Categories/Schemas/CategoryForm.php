@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Categories\Schemas;
 
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -10,7 +9,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class CategoryForm
 {
@@ -36,22 +34,6 @@ class CategoryForm
                         Textarea::make('description')
                             ->nullable()
                             ->columnSpanFull(),
-
-                        TextInput::make('icon')
-                            ->label('Icon Class')
-                            ->nullable()
-                            ->helperText('e.g. heroicon-o-truck'),
-
-                        FileUpload::make('image')
-                            ->image()
-                            ->disk('public')
-                            ->directory('categories')
-                            ->maxSize(5120)
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->getUploadedFileNameForStorageUsing(
-                                fn (TemporaryUploadedFile $file): string => Str::uuid().'.'.Str::lower($file->getClientOriginalExtension())
-                            )
-                            ->nullable(),
 
                         Toggle::make('is_active')
                             ->label('Active')
