@@ -36,6 +36,7 @@
             <nav aria-label="التنقل الرئيسي" class="hidden items-center gap-6 text-sm font-semibold lg:flex xl:gap-8">
                 <a href="{{ route('home') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('home') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">الرئيسية</a>
                 <a href="{{ route('cars.index') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('cars.*') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">السيارات</a>
+                <a href="{{ route('services') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('services') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">خدماتنا</a>
                 <a href="{{ route('about') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('about') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">من نحن</a>
                 <a href="{{ route('faq.index') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('faq.*') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">الأسئلة الشائعة</a>
                 <a href="{{ route('contact') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('contact*') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">تواصل معنا</a>
@@ -64,6 +65,7 @@
             <div class="grid gap-1 text-sm font-semibold">
                 <a href="{{ route('home') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('home') ? 'text-gold-light' : '' }}">الرئيسية</a>
                 <a href="{{ route('cars.index') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('cars.*') ? 'text-gold-light' : '' }}">السيارات</a>
+                <a href="{{ route('services') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('services') ? 'text-gold-light' : '' }}">خدماتنا</a>
                 <a href="{{ route('about') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('about') ? 'text-gold-light' : '' }}">من نحن</a>
                 <a href="{{ route('faq.index') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('faq.*') ? 'text-gold-light' : '' }}">الأسئلة الشائعة</a>
                 <a href="{{ route('contact') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('contact*') ? 'text-gold-light' : '' }}">تواصل معنا</a>
@@ -95,6 +97,7 @@
                     <h2 class="text-sm font-bold text-gold-light">روابط سريعة</h2>
                     <div class="mt-4 grid gap-3 text-sm text-white/55">
                         <a href="{{ route('cars.index') }}" class="hover:text-gold-light">أسطول السيارات</a>
+                        <a href="{{ route('services') }}" class="hover:text-gold-light">خدماتنا</a>
                         <a href="{{ route('about') }}" class="hover:text-gold-light">عن فخامة مسافر</a>
                         <a href="{{ route('faq.index') }}" class="hover:text-gold-light">الأسئلة الشائعة</a>
                         <a href="{{ route('contact') }}" class="hover:text-gold-light">تواصل معنا</a>

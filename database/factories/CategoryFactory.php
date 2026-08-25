@@ -20,7 +20,6 @@ class CategoryFactory extends Factory
         return [
             'name' => fake()->unique()->words(2, true),
             'description' => fake()->sentence(),
-            'icon' => 'heroicon-o-tag',
             'is_active' => true,
             'sort_order' => fake()->numberBetween(0, 100),
         ];

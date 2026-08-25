@@ -39,27 +39,58 @@
                 <span class="h-px w-7 bg-gold"></span>
                 <h2 class="font-bold text-white">احجز رحلتك الآن</h2>
             </div>
-            <form method="GET" action="{{ route('booking') }}" class="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_auto]">
+            <form id="hero-quote-form"
+                  data-whatsapp="{{ $whatsappNumber }}"
+                  class="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_auto]">
                 <label class="grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs text-white/50">
                     <span class="inline-flex items-center gap-2"><x-heroicon-o-map-pin class="size-4 text-gold" /> من</span>
-                    <input name="pickup" type="text" placeholder="موقع الانطلاق" class="min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-white/35">
+                    <input id="hqf-pickup" name="pickup" type="text" placeholder="موقع الانطلاق" class="min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-white/35">
                 </label>
                 <label class="grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs text-white/50">
                     <span class="inline-flex items-center gap-2"><x-heroicon-o-map-pin class="size-4 text-gold" /> إلى</span>
-                    <input name="destination" type="text" placeholder="اختر الوجهة" class="min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-white/35">
+                    <input id="hqf-destination" name="destination" type="text" placeholder="اختر الوجهة" class="min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-white/35">
                 </label>
                 <label class="grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs text-white/50">
                     <span class="inline-flex items-center gap-2"><x-heroicon-o-calendar-days class="size-4 text-gold" /> التاريخ</span>
-                    <input name="date" type="date" min="{{ now()->toDateString() }}" class="min-w-0 bg-transparent text-sm text-white outline-none scheme-dark">
+                    <input id="hqf-date" name="date" type="date" min="{{ now()->toDateString() }}" class="min-w-0 bg-transparent text-sm text-white outline-none scheme-dark">
                 </label>
                 <label class="grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs text-white/50">
-                    <span class="inline-flex items-center gap-2"><x-heroicon-o-user-group class="size-4 text-gold" /> عدد الركاب</span>
-                    <select name="passengers" class="min-w-0 bg-panel text-sm text-white outline-none">
-                        @foreach(range(1, 8) as $passengers)<option value="{{ $passengers }}">{{ $passengers }}</option>@endforeach
+                    <span class="inline-flex items-center gap-2"><x-heroicon-o-tag class="size-4 text-gold" /> نوع الخدمة</span>
+                    <select id="hqf-service" name="service" class="min-w-0 bg-panel text-sm text-white outline-none">
+                        <option value="الحجز من أو إلى المطار">✈️ الحجز من أو إلى المطار</option>
+                        <option value="رحلات سياحية">🗺️ رحلات سياحية</option>
+                        <option value="رحلات بين المدن">🛣️ رحلات بين المدن</option>
+                        <option value="سائق بالساعة">🕐 سائق بالساعة</option>
+                        <option value="خدمة المناسبات">🎉 خدمة المناسبات</option>
+                        <option value="خدمة رجال الأعمال">💼 خدمة رجال الأعمال</option>
+                        <option value="رحلات عائلية">👨‍👩‍👧 رحلات عائلية</option>
                     </select>
                 </label>
-                <button class="gold-surface min-h-16 rounded-2xl px-7 font-bold text-ink transition hover:brightness-110">طلب عرض</button>
+                <button type="submit" class="gold-surface min-h-16 rounded-2xl px-7 font-bold text-ink transition hover:brightness-110">طلب عرض</button>
             </form>
+
+            <script>
+                document.getElementById('hero-quote-form').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const form    = e.currentTarget;
+                    const wa      = form.dataset.whatsapp;
+                    const pickup  = document.getElementById('hqf-pickup').value.trim();
+                    const dest    = document.getElementById('hqf-destination').value.trim();
+                    const date    = document.getElementById('hqf-date').value;
+                    const service = document.getElementById('hqf-service').value;
+
+                    let msg = '🚗 *طلب عرض سعر — فخامة مسافر*\n\n';
+                    msg += `📋 *نوع الخدمة:* ${service}\n`;
+                    if (pickup)  msg += `📍 *من:* ${pickup}\n`;
+                    if (dest)    msg += `📍 *إلى:* ${dest}\n`;
+                    if (date)    msg += `📅 *التاريخ:* ${date}\n`;
+                    msg += '\nأرجو التواصل لتأكيد الحجز.';
+
+                    const number = wa ? wa : '966500000000';
+                    const url    = `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
+                    window.open(url, '_blank');
+                });
+            </script>
         </div>
     </section>
 

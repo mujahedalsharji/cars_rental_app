@@ -24,7 +24,8 @@ class HomeController extends Controller
         $featuredCars = $this->carService->getFeatured(8);
         $faqs = $this->faqService->getActive()->take(5);
         $settings = $this->settingService->getGroup('company');
+        $whatsappNumber = $this->settingService->get('contact.whatsapp_number');
 
-        return view('pages.home', compact('banners', 'featuredCars', 'faqs', 'settings'));
+        return view('pages.home', compact('banners', 'featuredCars', 'faqs', 'settings', 'whatsappNumber'));
     }
 }
