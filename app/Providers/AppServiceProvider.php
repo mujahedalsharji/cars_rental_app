@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         Category::observe(CategoryObserver::class);
         Faq::observe(FaqObserver::class);
         Media::observe(MediaObserver::class);
+        Schema::defaultStringLength(191);
 
         // ── API Rate Limiter ──────────────────────────────────────────────────
         // 60 requests per minute per IP address.
