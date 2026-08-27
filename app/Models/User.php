@@ -24,6 +24,12 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
+        'is_admin',
+    ];
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'is_admin' => false,
     ];
 
     /**
@@ -46,13 +52,13 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
     /**
-     * Only allow access to the admin panel.
-     * In local development, any authenticated user can access it.
-     * In production, restrict to the configured admin email.
+     * Only administrators may access the admin panel.
+     * The configured email remains a safe migration path for the existing account.
      */
     public function canAccessPanel(Panel $panel): bool
     {
@@ -60,14 +66,11 @@ class User extends Authenticatable implements FilamentUser
             return false;
         }
 
-        if (app()->isProduction()) {
-            $adminEmail = config('car_rental.admin_email');
+        $adminEmail = config('car_rental.admin_email');
+        $isConfiguredAdmin = is_string($adminEmail)
+            && $adminEmail !== ''
+            && hash_equals(mb_strtolower($adminEmail), mb_strtolower($this->email));
 
-            return is_string($adminEmail)
-                && $adminEmail !== ''
-                && hash_equals($adminEmail, $this->email);
-        }
-
-        return true;
+        return $this->is_admin || $isConfiguredAdmin;
     }
 }

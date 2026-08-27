@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -14,6 +15,15 @@ class SettingService
 
     /** @var list<string> */
     private const IMAGE_KEYS = ['company.logo', 'appearance.favicon'];
+
+    /** @var array<string, string> */
+    private const SETTING_TYPES = [
+        'company.description' => 'text',
+        'company.about_text' => 'text',
+        'contact.address' => 'text',
+        'seo.meta_description' => 'text',
+        'system.maintenance_mode' => 'boolean',
+    ];
 
     public function __construct(private MediaService $mediaService) {}
 
@@ -125,20 +135,46 @@ class SettingService
 
     private function updateValue(string $key, mixed $value): void
     {
-        $setting = Setting::query()->where('key', $key)->first();
+        $setting = Setting::query()->firstOrNew(['key' => $key]);
 
-        if ($setting === null) {
-            return;
+        if (! $setting->exists) {
+            $setting->type = self::SETTING_TYPES[$key] ?? $this->inferType($value);
+            $setting->settings_group = Str::before($key, '.');
         }
 
         $previousValue = $setting->value;
-        $setting->update(['value' => $value]);
+        $normalizedValue = $this->normalizeValue($key, $value);
+        $setting->value = $normalizedValue;
+        $setting->save();
 
         if (in_array($key, self::IMAGE_KEYS, true)
             && is_string($previousValue)
             && $previousValue !== ''
-            && $previousValue !== $value) {
+            && $previousValue !== $normalizedValue) {
             $this->mediaService->deleteImage($previousValue);
         }
+    }
+
+    private function inferType(mixed $value): string
+    {
+        return match (true) {
+            is_bool($value) => 'boolean',
+            is_int($value) => 'integer',
+            is_array($value) => 'json',
+            default => 'string',
+        };
+    }
+
+    private function normalizeValue(string $key, mixed $value): mixed
+    {
+        if (in_array($key, self::IMAGE_KEYS, true) && is_array($value)) {
+            return Arr::first($value);
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_THROW_ON_ERROR);
+        }
+
+        return $value;
     }
 }

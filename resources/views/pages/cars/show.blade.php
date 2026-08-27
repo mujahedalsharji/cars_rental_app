@@ -4,6 +4,7 @@
     $media = $car->getMedia('car_images');
     $fallbackImage = asset('assets/images/fleet-gmc-yukon.png');
     $coverImage = $media->first()?->getUrl() ?? $fallbackImage;
+    $plainDescription = str((string) $car->description)->stripTags()->trim();
 @endphp
 
 @section('title', ($car->meta_title ?: $car->name).' | فخامة مسافر')
@@ -46,7 +47,7 @@
                     <h1 class="mt-2 text-3xl font-extrabold text-white sm:text-4xl">{{ $car->name }}</h1>
                     <p class="mt-2 text-sm text-white/50">{{ $car->brand }} · {{ $car->model }} · {{ $car->year }}</p>
                     <p class="mt-5 text-sm leading-8 text-white/60 sm:text-base sm:leading-9">
-                        {{ $car->description ?: 'سيارة حديثة مجهزة لتمنحك رحلة هادئة ومريحة مع أحد سائقي فخامة مسافر المحترفين.' }}
+                        {{ $plainDescription->isNotEmpty() ? $plainDescription : 'سيارة حديثة مجهزة لتمنحك رحلة هادئة ومريحة مع أحد سائقي فخامة مسافر المحترفين.' }}
                     </p>
 
                     {{-- Specs grid --}}

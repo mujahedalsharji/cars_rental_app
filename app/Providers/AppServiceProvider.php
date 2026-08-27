@@ -17,10 +17,10 @@ use App\Services\SettingService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
                     'company' => $settings->getGroup('company'),
                     'contact' => $settings->getGroup('contact'),
                     'social' => $settings->getGroup('social'),
+                    'appearance' => $settings->getGroup('appearance'),
                 ],
             ]);
         });

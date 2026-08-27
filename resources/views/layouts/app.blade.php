@@ -4,16 +4,19 @@
     @php
         $company = $layoutSettings['company'] ?? [];
         $contact = $layoutSettings['contact'] ?? [];
+        $appearance = $layoutSettings['appearance'] ?? [];
         $companyName = ($company['name'] ?? null) === 'Cars Rental' ? 'فخامة مسافر' : ($company['name'] ?? 'فخامة مسافر');
         $whatsappNumber = $contact['whatsapp_number'] ?? null;
         $whatsappUrl = $whatsappNumber ? 'https://wa.me/'.preg_replace('/\D+/', '', $whatsappNumber) : route('contact');
+        $logoUrl = filled($company['logo'] ?? null) ? \Illuminate\Support\Facades\Storage::disk('public')->url($company['logo']) : asset('assets/images/logo-clean.png');
+        $faviconUrl = filled($appearance['favicon'] ?? null) ? \Illuminate\Support\Facades\Storage::disk('public')->url($appearance['favicon']) : asset('favicon.ico');
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="@yield('meta_description', 'فخامة مسافر للنقل البري وخدمات السيارات مع سائق في المملكة العربية السعودية.')">
     <meta name="theme-color" content="#080b0d">
     <title>@yield('title', $companyName)</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" href="{{ $faviconUrl }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen overflow-x-hidden bg-ink font-sans text-cream antialiased">
@@ -29,7 +32,7 @@
 
             {{-- Logo --}}
             <a href="{{ route('home') }}" class="relative z-10 shrink-0" aria-label="{{ $companyName }} - الرئيسية">
-                <img src="{{ asset('assets/images/logo-clean.png') }}" alt="{{ $companyName }}" class="h-14 w-20 object-contain sm:h-16 sm:w-28 lg:h-20 lg:w-36">
+                <img src="{{ $logoUrl }}" alt="{{ $companyName }}" class="h-14 w-20 object-contain sm:h-16 sm:w-28 lg:h-20 lg:w-36">
             </a>
 
             {{-- Desktop Nav --}}
@@ -87,7 +90,7 @@
             <div class="grid gap-10 sm:grid-cols-2 md:grid-cols-[1.4fr_0.8fr_0.8fr]">
                 {{-- Brand --}}
                 <div>
-                    <img src="{{ asset('assets/images/logo-clean.png') }}" alt="{{ $companyName }}" class="h-20 w-32 object-contain">
+                    <img src="{{ $logoUrl }}" alt="{{ $companyName }}" class="h-20 w-32 object-contain">
                     <p class="mt-4 max-w-xs text-sm leading-7 text-white/55">
                         رحلات خاصة بسيارات حديثة وسائقين محترفين، لتصل إلى وجهتك براحة وأمان.
                     </p>
