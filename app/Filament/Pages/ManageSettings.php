@@ -18,6 +18,7 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Str;
+use League\Flysystem\FilesystemException;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ManageSettings extends Page implements HasForms
@@ -162,7 +163,19 @@ class ManageSettings extends Page implements HasForms
 
     public function save(SettingService $settingService): void
     {
-        $state = $this->form->getState();
+        try {
+            $state = $this->form->getState();
+        } catch (FilesystemException $exception) {
+            report($exception);
+
+            Notification::make()
+                ->title('File upload failed')
+                ->body('The server could not store the file. Check the storage directory permissions and try again.')
+                ->danger()
+                ->send();
+
+            return;
+        }
 
         $bulkUpdate = [];
         foreach (self::SETTING_FIELDS as $field => $settingKey) {

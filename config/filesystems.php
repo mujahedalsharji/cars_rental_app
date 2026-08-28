@@ -34,8 +34,8 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'serve' => true,
-            'throw' => false,
-            'report' => false,
+            'throw' => true,
+            'report' => true,
         ],
 
         'public' => [
@@ -43,8 +43,8 @@ return [
             'root' => storage_path('app/public'),
             'url' => env('FILESYSTEM_PUBLIC_URL', '/media'),
             'visibility' => 'public',
-            'throw' => false,
-            'report' => false,
+            'throw' => true,
+            'report' => true,
         ],
 
         's3' => [
