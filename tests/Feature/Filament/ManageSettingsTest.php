@@ -25,6 +25,7 @@ test('the settings page loads and saves the documented keys', function () {
 
     Livewire::test(ManageSettings::class)
         ->assertOk()
+        ->assertSee('Uploading file...')
         ->assertSchemaStateSet([
             'company_name' => 'Original Name',
             'contact_whatsapp_number' => '967700000000',
