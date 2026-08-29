@@ -41,8 +41,10 @@ test('the services hub links to dedicated service pages', function () {
         ->assertSee(route('services.show', 'jeddah-airport-to-makkah'), false)
         ->assertSee(route('services.show', 'makkah-to-madinah'), false)
         ->assertSee(route('services.show', 'hourly-private-driver'), false)
-        ->assertSee('alt="أبراج البيت في مكة المكرمة"', false)
-        ->assertSee('مصادر الصور وتراخيصها');
+        ->assertSee('assets/images/services/car-with-driver.webp', false)
+        ->assertSee('assets/images/services/jeddah-airport-transfer.webp', false)
+        ->assertSee('مكة المكرمة')
+        ->assertDontSee('مصادر الصور وتراخيصها');
 });
 
 test('dedicated service pages have unique Arabic metadata and canonical URLs', function (string $service, string $title) {
@@ -62,15 +64,26 @@ test('dedicated service pages have unique Arabic metadata and canonical URLs', f
     'hourly driver' => ['hourly-private-driver', 'خدمة سائق خاص بالساعة'],
 ]);
 
-test('public pages have canonical URLs on the configured production domain', function () {
+test('public pages have canonical URLs on the configured production domain', function (string $path, string $canonical) {
     config()->set('app.url', 'https://fakhamahmosafer.com');
 
-    $this->get('/cars?category=suv&page=2&utm_source=google')
+    $separator = str_contains($path, '?') ? '&' : '?';
+
+    $this->withHeader('Host', 'www.fakhamahmosafer.com')
+        ->get($path.$separator.'utm_source=google')
         ->assertSuccessful()
-        ->assertSee('<link rel="canonical" href="https://fakhamahmosafer.com/cars">', false)
+        ->assertSee('<link rel="canonical" href="'.$canonical.'">', false)
         ->assertDontSee('utm_source=google', false)
-        ->assertDontSee('category=suv', false);
-});
+        ->assertDontSee('href="'.$canonical.'?"', false);
+})->with([
+    'home' => ['/', 'https://fakhamahmosafer.com/'],
+    'fleet' => ['/cars?category=suv&page=2', 'https://fakhamahmosafer.com/cars'],
+    'services' => ['/services', 'https://fakhamahmosafer.com/services'],
+    'about with trailing slash' => ['/about/', 'https://fakhamahmosafer.com/about'],
+    'faq' => ['/faq', 'https://fakhamahmosafer.com/faq'],
+    'contact' => ['/contact', 'https://fakhamahmosafer.com/contact'],
+    'booking' => ['/booking?car=bmw-7-series', 'https://fakhamahmosafer.com/booking'],
+]);
 
 test('car detail canonical URLs retain the car path', function () {
     config()->set('app.url', 'https://fakhamahmosafer.com');

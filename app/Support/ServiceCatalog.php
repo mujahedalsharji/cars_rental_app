@@ -14,6 +14,7 @@ class ServiceCatalog
         return collect([
             [
                 'slug' => 'car-with-driver',
+                'image' => 'assets/images/services/car-with-driver.webp',
                 'icon' => 'heroicon-o-user-circle',
                 'eyebrow' => 'الخدمة الأساسية',
                 'title' => 'سيارة مع سائق في مكة ومدن المملكة',
@@ -38,6 +39,7 @@ class ServiceCatalog
             ],
             [
                 'slug' => 'jeddah-airport-to-makkah',
+                'image' => 'assets/images/services/jeddah-airport-transfer.webp',
                 'icon' => 'heroicon-o-paper-airplane',
                 'eyebrow' => 'توصيل المطار',
                 'title' => 'توصيل من مطار جدة إلى مكة',
@@ -62,6 +64,7 @@ class ServiceCatalog
             ],
             [
                 'slug' => 'makkah-to-madinah',
+                'image' => 'assets/images/services/makkah-madinah-transfer.webp',
                 'icon' => 'heroicon-o-arrows-right-left',
                 'eyebrow' => 'رحلات بين المدن',
                 'title' => 'رحلات من مكة إلى المدينة المنورة',
@@ -86,6 +89,7 @@ class ServiceCatalog
             ],
             [
                 'slug' => 'hourly-private-driver',
+                'image' => 'assets/images/services/hourly-private-driver.webp',
                 'icon' => 'heroicon-o-clock',
                 'eyebrow' => 'مرونة في التنقل',
                 'title' => 'خدمة سائق خاص بالساعة',
@@ -119,6 +123,7 @@ class ServiceCatalog
         return $this->all()->concat([
             [
                 'slug' => null,
+                'image' => 'assets/images/services/special-occasions.webp',
                 'icon' => 'heroicon-o-star',
                 'eyebrow' => 'مناسبات خاصة',
                 'card_title' => 'سيارات المناسبات',
@@ -127,6 +132,7 @@ class ServiceCatalog
             ],
             [
                 'slug' => null,
+                'image' => 'assets/images/services/business-chauffeur.webp',
                 'icon' => 'heroicon-o-briefcase',
                 'eyebrow' => 'أعمال ووفود',
                 'card_title' => 'خدمة رجال الأعمال',

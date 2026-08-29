@@ -10,8 +10,7 @@
         $whatsappUrl = $whatsappNumber ? 'https://wa.me/'.preg_replace('/\D+/', '', $whatsappNumber) : route('contact');
         $logoUrl = filled($company['logo'] ?? null) ? \Illuminate\Support\Facades\Storage::disk('public')->url($company['logo']) : asset('assets/images/logo-clean.png');
         $faviconUrl = filled($appearance['favicon'] ?? null) ? \Illuminate\Support\Facades\Storage::disk('public')->url($appearance['favicon']) : asset('favicon.ico');
-        $canonicalPath = request()->getPathInfo();
-        $canonicalUrl = rtrim((string) config('app.url'), '/').($canonicalPath === '/' ? '/' : $canonicalPath);
+        $canonicalUrl = app(\App\Support\CanonicalUrl::class)->fromRequest(request());
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

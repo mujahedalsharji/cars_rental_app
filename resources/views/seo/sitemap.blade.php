@@ -7,7 +7,7 @@
     @endforeach
     @foreach ($cars as $car)
         <url>
-            <loc>{{ route('cars.show', ['slug' => $car->slug]) }}</loc>
+            <loc>{{ $canonicalUrl->fromPath(route('cars.show', ['slug' => $car->slug], false)) }}</loc>
             <lastmod>{{ $car->updated_at->toAtomString() }}</lastmod>
         </url>
     @endforeach

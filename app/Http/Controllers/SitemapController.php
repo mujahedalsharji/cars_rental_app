@@ -3,29 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Car;
+use App\Support\CanonicalUrl;
 use App\Support\ServiceCatalog;
 use Illuminate\Http\Response;
 
 class SitemapController extends Controller
 {
-    public function __invoke(ServiceCatalog $serviceCatalog): Response
+    public function __invoke(ServiceCatalog $serviceCatalog, CanonicalUrl $canonicalUrl): Response
     {
-        $staticUrls = [
-            route('home'),
-            route('cars.index'),
-            route('services'),
-            route('about'),
-            route('faq.index'),
-            route('contact'),
-            route('booking'),
+        $staticPaths = [
+            route('home', absolute: false),
+            route('cars.index', absolute: false),
+            route('services', absolute: false),
+            route('about', absolute: false),
+            route('faq.index', absolute: false),
+            route('contact', absolute: false),
+            route('booking', absolute: false),
         ];
 
-        $staticUrls = [
-            ...$staticUrls,
+        $staticPaths = [
+            ...$staticPaths,
             ...collect($serviceCatalog->slugs())
-                ->map(fn (string $service): string => route('services.show', $service))
+                ->map(fn (string $service): string => route('services.show', $service, false))
                 ->all(),
         ];
+
+        $staticUrls = collect($staticPaths)
+            ->map(fn (string $path): string => $canonicalUrl->fromPath($path))
+            ->all();
 
         $cars = Car::query()
             ->published()
@@ -34,7 +39,7 @@ class SitemapController extends Controller
             ->get();
 
         return response()
-            ->view('seo.sitemap', compact('staticUrls', 'cars'))
+            ->view('seo.sitemap', compact('staticUrls', 'cars', 'canonicalUrl'))
             ->header('Content-Type', 'application/xml; charset=UTF-8');
     }
 }

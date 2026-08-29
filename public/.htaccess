@@ -5,6 +5,15 @@
 
     RewriteEngine On
 
+    # Send alternate hostnames to the preferred non-www domain.
+    RewriteCond %{HTTP_HOST} !^fakhamahmosafer\.com$ [NC]
+    RewriteRule ^ https://fakhamahmosafer.com%{REQUEST_URI} [R=301,L,NE]
+
+    # Keep one HTTPS version without looping behind an HTTPS proxy.
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+    RewriteRule ^ https://fakhamahmosafer.com%{REQUEST_URI} [R=301,L,NE]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
