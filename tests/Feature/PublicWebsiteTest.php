@@ -34,6 +34,56 @@ test('published cars appear in the fleet and have a public detail page', functio
         ->assertSee('900');
 });
 
+test('the services hub links to dedicated service pages', function () {
+    $this->get(route('services'))
+        ->assertSuccessful()
+        ->assertSee(route('services.show', 'car-with-driver'), false)
+        ->assertSee(route('services.show', 'jeddah-airport-to-makkah'), false)
+        ->assertSee(route('services.show', 'makkah-to-madinah'), false)
+        ->assertSee(route('services.show', 'hourly-private-driver'), false)
+        ->assertSee('alt="أبراج البيت في مكة المكرمة"', false)
+        ->assertSee('مصادر الصور وتراخيصها');
+});
+
+test('dedicated service pages have unique Arabic metadata and canonical URLs', function (string $service, string $title) {
+    config()->set('app.url', 'https://fakhamahmosafer.com');
+
+    $this->get(route('services.show', $service))
+        ->assertSuccessful()
+        ->assertSee($title)
+        ->assertSee(
+            '<link rel="canonical" href="https://fakhamahmosafer.com/services/'.$service.'">',
+            false,
+        );
+})->with([
+    'car with driver' => ['car-with-driver', 'سيارة مع سائق في مكة ومدن المملكة'],
+    'airport transfer' => ['jeddah-airport-to-makkah', 'توصيل من مطار جدة إلى مكة'],
+    'intercity trip' => ['makkah-to-madinah', 'رحلات من مكة إلى المدينة المنورة'],
+    'hourly driver' => ['hourly-private-driver', 'خدمة سائق خاص بالساعة'],
+]);
+
+test('public pages have canonical URLs on the configured production domain', function () {
+    config()->set('app.url', 'https://fakhamahmosafer.com');
+
+    $this->get('/cars?category=suv&page=2&utm_source=google')
+        ->assertSuccessful()
+        ->assertSee('<link rel="canonical" href="https://fakhamahmosafer.com/cars">', false)
+        ->assertDontSee('utm_source=google', false)
+        ->assertDontSee('category=suv', false);
+});
+
+test('car detail canonical URLs retain the car path', function () {
+    config()->set('app.url', 'https://fakhamahmosafer.com');
+    $car = Car::factory()->published()->create([
+        'slug' => 'bmw-7-series-g70-2023',
+    ]);
+
+    $this->get('/cars/bmw-7-series-g70-2023?utm_campaign=launch')
+        ->assertSuccessful()
+        ->assertSee('<link rel="canonical" href="https://fakhamahmosafer.com/cars/bmw-7-series-g70-2023">', false)
+        ->assertDontSee('utm_campaign=launch', false);
+});
+
 test('unpublished cars are not publicly accessible', function () {
     $car = Car::factory()->create();
 

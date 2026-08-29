@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Car;
+use App\Support\ServiceCatalog;
 use Illuminate\Http\Response;
 
 class SitemapController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(ServiceCatalog $serviceCatalog): Response
     {
         $staticUrls = [
             route('home'),
@@ -17,6 +18,13 @@ class SitemapController extends Controller
             route('faq.index'),
             route('contact'),
             route('booking'),
+        ];
+
+        $staticUrls = [
+            ...$staticUrls,
+            ...collect($serviceCatalog->slugs())
+                ->map(fn (string $service): string => route('services.show', $service))
+                ->all(),
         ];
 
         $cars = Car::query()

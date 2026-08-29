@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Car;
+use App\Support\ServiceCatalog;
 use Carbon\CarbonImmutable;
 
 test('the sitemap contains public pages and published cars', function () {
@@ -24,6 +25,10 @@ test('the sitemap contains public pages and published cars', function () {
         ->assertSee(route('cars.show', ['slug' => $publishedCar->slug]), false)
         ->assertSee($lastModified->toAtomString(), false)
         ->assertDontSee(route('cars.show', ['slug' => $unpublishedCar->slug]), false);
+
+    foreach (app(ServiceCatalog::class)->slugs() as $service) {
+        $response->assertSee(route('services.show', $service), false);
+    }
 
     expect(simplexml_load_string($response->getContent()))->not->toBeFalse();
 });

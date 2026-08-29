@@ -19,6 +19,14 @@ Route::get('/media/{path}', PublicMediaController::class)
 Route::get('/cars', [CarController::class, 'index'])->name('cars.index');
 Route::get('/cars/{slug}', [CarController::class, 'show'])->name('cars.show');
 Route::get('/services', [ServicesController::class, 'index'])->name('services');
+Route::get('/services/{service}', [ServicesController::class, 'show'])
+    ->whereIn('service', [
+        'car-with-driver',
+        'jeddah-airport-to-makkah',
+        'makkah-to-madinah',
+        'hourly-private-driver',
+    ])
+    ->name('services.show');
 Route::get('/about', [AboutController::class, 'index'])->name('about');
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');

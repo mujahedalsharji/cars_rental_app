@@ -10,12 +10,15 @@
         $whatsappUrl = $whatsappNumber ? 'https://wa.me/'.preg_replace('/\D+/', '', $whatsappNumber) : route('contact');
         $logoUrl = filled($company['logo'] ?? null) ? \Illuminate\Support\Facades\Storage::disk('public')->url($company['logo']) : asset('assets/images/logo-clean.png');
         $faviconUrl = filled($appearance['favicon'] ?? null) ? \Illuminate\Support\Facades\Storage::disk('public')->url($appearance['favicon']) : asset('favicon.ico');
+        $canonicalPath = request()->getPathInfo();
+        $canonicalUrl = rtrim((string) config('app.url'), '/').($canonicalPath === '/' ? '/' : $canonicalPath);
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="@yield('meta_description', 'فخامة مسافر للنقل البري وخدمات السيارات مع سائق في المملكة العربية السعودية.')">
     <meta name="theme-color" content="#080b0d">
     <title>@yield('title', $companyName)</title>
+    <link rel="canonical" href="@yield('canonical', $canonicalUrl)">
     <link rel="icon" href="{{ $faviconUrl }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -39,7 +42,7 @@
             <nav aria-label="التنقل الرئيسي" class="hidden items-center gap-6 text-sm font-semibold lg:flex xl:gap-8">
                 <a href="{{ route('home') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('home') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">الرئيسية</a>
                 <a href="{{ route('cars.index') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('cars.*') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">السيارات</a>
-                <a href="{{ route('services') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('services') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">خدماتنا</a>
+                <a href="{{ route('services') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('services', 'services.*') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">خدماتنا</a>
                 <a href="{{ route('about') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('about') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">من نحن</a>
                 <a href="{{ route('faq.index') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('faq.*') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">الأسئلة الشائعة</a>
                 <a href="{{ route('contact') }}" class="border-b-2 pb-1.5 transition {{ request()->routeIs('contact*') ? 'border-gold text-gold-light' : 'border-transparent text-white/80 hover:text-gold-light' }}">تواصل معنا</a>
@@ -68,7 +71,7 @@
             <div class="grid gap-1 text-sm font-semibold">
                 <a href="{{ route('home') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('home') ? 'text-gold-light' : '' }}">الرئيسية</a>
                 <a href="{{ route('cars.index') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('cars.*') ? 'text-gold-light' : '' }}">السيارات</a>
-                <a href="{{ route('services') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('services') ? 'text-gold-light' : '' }}">خدماتنا</a>
+                <a href="{{ route('services') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('services', 'services.*') ? 'text-gold-light' : '' }}">خدماتنا</a>
                 <a href="{{ route('about') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('about') ? 'text-gold-light' : '' }}">من نحن</a>
                 <a href="{{ route('faq.index') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('faq.*') ? 'text-gold-light' : '' }}">الأسئلة الشائعة</a>
                 <a href="{{ route('contact') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('contact*') ? 'text-gold-light' : '' }}">تواصل معنا</a>
