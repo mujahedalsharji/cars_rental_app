@@ -19,6 +19,8 @@
     <title>@yield('title', $companyName)</title>
     <link rel="canonical" href="@yield('canonical', $canonicalUrl)">
     <link rel="icon" href="{{ $faviconUrl }}">
+    <x-structured-data :data="app(\App\Support\StructuredData::class)->organizationAndWebsite($layoutSettings, $logoUrl)" />
+    @stack('structured_data')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen overflow-x-hidden bg-ink font-sans text-cream antialiased">

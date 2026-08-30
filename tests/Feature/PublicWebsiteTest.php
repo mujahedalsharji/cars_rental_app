@@ -2,6 +2,22 @@
 
 use App\Models\Car;
 use App\Models\Category;
+use App\Models\Setting;
+use App\Services\SettingService;
+
+/**
+ * @return array<int, array<string, mixed>>
+ */
+function structuredDataNodes(string $content): array
+{
+    preg_match_all('/<script type="application\/ld\+json">(.*?)<\/script>/s', $content, $matches);
+
+    return collect($matches[1])
+        ->map(fn (string $json): array => json_decode($json, true, flags: JSON_THROW_ON_ERROR))
+        ->flatMap(fn (array $document): array => $document['@graph'] ?? [$document])
+        ->values()
+        ->all();
+}
 
 test('public pages render the Arabic website', function (string $routeName) {
     $this->get(route($routeName))
@@ -95,6 +111,60 @@ test('car detail canonical URLs retain the car path', function () {
         ->assertSuccessful()
         ->assertSee('<link rel="canonical" href="https://fakhamahmosafer.com/cars/bmw-7-series-g70-2023">', false)
         ->assertDontSee('utm_campaign=launch', false);
+});
+
+test('the public layout publishes organization and website structured data', function () {
+    config()->set('app.url', 'https://fakhamahmosafer.com');
+
+    Setting::query()->upsert([
+        ['key' => 'company.name', 'value' => 'فخامة مسافر', 'type' => 'string', 'settings_group' => 'company'],
+        ['key' => 'contact.phone_primary', 'value' => '+966500000000', 'type' => 'string', 'settings_group' => 'contact'],
+        ['key' => 'contact.email', 'value' => 'booking@example.com', 'type' => 'string', 'settings_group' => 'contact'],
+        ['key' => 'social.instagram_url', 'value' => 'https://instagram.com/fakhamahmosafer', 'type' => 'string', 'settings_group' => 'social'],
+    ], ['key'], ['value', 'type', 'settings_group']);
+
+    app(SettingService::class)->clearCache();
+
+    $nodes = structuredDataNodes($this->get(route('home'))->assertSuccessful()->getContent());
+    $organization = collect($nodes)->firstWhere('@type', 'Organization');
+    $website = collect($nodes)->firstWhere('@type', 'WebSite');
+
+    expect($organization)
+        ->not->toBeNull()
+        ->and($organization['@id'])->toBe('https://fakhamahmosafer.com/#organization')
+        ->and($organization['name'])->toBe('فخامة مسافر')
+        ->and($organization['url'])->toBe('https://fakhamahmosafer.com/')
+        ->and($organization['contactPoint']['telephone'])->toBe('+966500000000')
+        ->and($organization['contactPoint']['email'])->toBe('booking@example.com')
+        ->and($organization['sameAs'])->toBe(['https://instagram.com/fakhamahmosafer'])
+        ->and($website)
+        ->not->toBeNull()
+        ->and($website['publisher']['@id'])->toBe('https://fakhamahmosafer.com/#organization')
+        ->and($website['inLanguage'])->toBe('ar');
+});
+
+test('dedicated service pages publish service and breadcrumb structured data', function () {
+    config()->set('app.url', 'https://fakhamahmosafer.com');
+
+    $nodes = structuredDataNodes(
+        $this->get(route('services.show', 'jeddah-airport-to-makkah'))
+            ->assertSuccessful()
+            ->getContent(),
+    );
+    $service = collect($nodes)->firstWhere('@type', 'Service');
+    $breadcrumbs = collect($nodes)->firstWhere('@type', 'BreadcrumbList');
+
+    expect($service)
+        ->not->toBeNull()
+        ->and($service['@id'])->toBe('https://fakhamahmosafer.com/services/jeddah-airport-to-makkah#service')
+        ->and($service['name'])->toBe('توصيل من مطار جدة إلى مكة')
+        ->and($service['provider']['@id'])->toBe('https://fakhamahmosafer.com/#organization')
+        ->and($service['areaServed']['name'])->toBe('المملكة العربية السعودية')
+        ->and($breadcrumbs)
+        ->not->toBeNull()
+        ->and($breadcrumbs['itemListElement'])->toHaveCount(3)
+        ->and($breadcrumbs['itemListElement'][1]['item'])->toBe('https://fakhamahmosafer.com/services')
+        ->and($breadcrumbs['itemListElement'][2]['name'])->toBe('مطار جدة إلى مكة');
 });
 
 test('unpublished cars are not publicly accessible', function () {
