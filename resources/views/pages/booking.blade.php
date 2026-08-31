@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <x-page-hero eyebrow="طلب رحلة" title="بضع تفاصيل تفصلك عن رحلتك"
+    <x-page-hero eyebrow="طلب رحلة" title="بضع تفاصيل تفصلك عن رحلتك" image="assets/images/heroes/booking.webp"
         description="املأ بيانات الرحلة وسيفتح طلب منظم عبر واتساب لتأكيد التوفر والسعر." />
 
     <section class="px-4 py-10 sm:px-6 sm:py-14 lg:px-8">

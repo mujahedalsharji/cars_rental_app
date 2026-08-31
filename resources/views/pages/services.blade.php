@@ -33,6 +33,7 @@
     <x-page-hero
         eyebrow="خدمات فخامة مسافر"
         title="تنقل خاص يناسب رحلتك"
+        image="assets/images/heroes/services.webp"
         description="اختر الخدمة المناسبة، اطلع على التفاصيل، ثم أرسل موعدك ومسارك عبر واتساب." />
 
     <section class="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
@@ -43,8 +44,6 @@
                         <img src="{{ asset($service['image']) }}"
                              alt="" width="1536" height="1024" loading="lazy" decoding="async"
                              class="absolute inset-0 -z-20 size-full object-cover transition duration-700 group-hover:scale-105">
-                        <div class="absolute inset-0 -z-10 bg-black/40"></div>
-                        <div class="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/75 to-black/20"></div>
 
                         <div class="flex w-full flex-col">
                             <div class="flex items-start justify-between gap-4">
@@ -55,8 +54,8 @@
                             </div>
 
                             <div class="mt-auto pt-12">
-                                <h2 class="text-2xl font-extrabold text-white drop-shadow-sm">{{ $service['card_title'] }}</h2>
-                                <p class="mt-3 max-w-sm text-sm leading-7 text-white/75">{{ $service['description'] }}</p>
+                                <h2 class="text-shadow-lg text-shadow-black/90 text-2xl font-extrabold text-white">{{ $service['card_title'] }}</h2>
+                                <p class="text-shadow-lg text-shadow-black/90 mt-3 max-w-sm text-sm font-medium leading-7 text-white">{{ $service['description'] }}</p>
 
                                 @if($service['slug'])
                                     <a href="{{ route('services.show', $service['slug']) }}"

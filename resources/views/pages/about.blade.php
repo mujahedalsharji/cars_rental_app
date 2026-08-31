@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <x-page-hero eyebrow="قصتنا" title="فخامة تبدأ قبل الوصول"
+    <x-page-hero eyebrow="قصتنا" title="فخامة تبدأ قبل الوصول" image="assets/images/heroes/about.webp"
         description="نرتب كل تفصيلة في رحلتك لتكون أكثر هدوءاً وراحة، من اختيار السيارة إلى لحظة الوصول." />
 
     {{-- Story --}}

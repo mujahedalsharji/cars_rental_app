@@ -5,7 +5,7 @@
 
 @section('content')
 
-    <x-page-hero eyebrow="أسطولنا" title="سيارة تليق بكل وجهة"
+    <x-page-hero eyebrow="أسطولنا" title="سيارة تليق بكل وجهة" image="assets/images/heroes/cars.webp"
         description="اختر من سياراتنا الحديثة، ودع فريقنا يرتب لك رحلة مريحة وآمنة." />
 
     <section class="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">

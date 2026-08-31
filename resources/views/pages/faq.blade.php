@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <x-page-hero eyebrow="معلومات الرحلة" title="كل ما تحتاج معرفته"
+    <x-page-hero eyebrow="معلومات الرحلة" title="كل ما تحتاج معرفته" image="assets/images/heroes/faq.webp"
         description="إجابات سريعة وواضحة عن الحجز والسيارات والخدمة." />
 
     <section class="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">

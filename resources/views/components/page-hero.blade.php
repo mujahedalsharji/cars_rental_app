@@ -1,9 +1,14 @@
-@props(['eyebrow', 'title', 'description' => null])
+@props([
+    'eyebrow',
+    'title',
+    'description' => null,
+    'image' => 'assets/images/hero-clean.png',
+])
 
 <section class="relative isolate overflow-hidden border-b border-gold/15 bg-ink-soft">
-    <img src="{{ asset('assets/images/hero-clean.png') }}" alt=""
-         class="absolute inset-0 -z-20 size-full object-cover opacity-15 grayscale" aria-hidden="true">
-    <div class="absolute inset-0 -z-10 bg-gradient-to-b from-ink/40 via-ink/75 to-ink"></div>
+    <img src="{{ asset($image) }}" alt="" width="1672" height="941" fetchpriority="high" decoding="async"
+         class="absolute inset-0 -z-20 size-full object-cover opacity-50" aria-hidden="true">
+    <div class="absolute inset-0 -z-10 bg-ink/50"></div>
 
     <div class="mx-auto max-w-7xl px-4 py-14 text-center sm:px-6 sm:py-20 lg:px-8" data-reveal>
         <p class="text-xs font-bold uppercase tracking-[0.2em] text-gold">{{ $eyebrow }}</p>
