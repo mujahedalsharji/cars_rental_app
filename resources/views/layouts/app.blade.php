@@ -14,6 +14,8 @@
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="trip-number-url" content="{{ route('trip-numbers.store') }}">
     <meta name="description" content="@yield('meta_description', 'فخامة مسافر للنقل البري وخدمات السيارات مع سائق في المملكة العربية السعودية.')">
     <meta name="theme-color" content="#080b0d">
     <title>@yield('title', $companyName)</title>
@@ -51,7 +53,7 @@
 
             {{-- Desktop CTA --}}
             <div class="hidden lg:block">
-                <a href="{{ $whatsappUrl }}" @if($whatsappNumber) target="_blank" rel="noopener noreferrer" @endif
+                <a href="{{ $whatsappUrl }}" @if($whatsappNumber) target="_blank" rel="noopener noreferrer" data-whatsapp-number="{{ $whatsappNumber }}" data-whatsapp-message="مرحباً فخامة مسافر، أرغب في طلب رحلة." @endif
                    class="gold-surface inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold text-ink shadow-lg shadow-gold/10 transition hover:-translate-y-0.5 hover:brightness-110">
                     <x-heroicon-o-chat-bubble-left-right class="size-5" />
                     احجز عبر واتساب
@@ -76,7 +78,7 @@
                 <a href="{{ route('about') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('about') ? 'text-gold-light' : '' }}">من نحن</a>
                 <a href="{{ route('faq.index') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('faq.*') ? 'text-gold-light' : '' }}">الأسئلة الشائعة</a>
                 <a href="{{ route('contact') }}" class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-gold-light {{ request()->routeIs('contact*') ? 'text-gold-light' : '' }}">تواصل معنا</a>
-                <a href="{{ $whatsappUrl }}" @if($whatsappNumber) target="_blank" rel="noopener noreferrer" @endif
+                <a href="{{ $whatsappUrl }}" @if($whatsappNumber) target="_blank" rel="noopener noreferrer" data-whatsapp-number="{{ $whatsappNumber }}" data-whatsapp-message="مرحباً فخامة مسافر، أرغب في طلب رحلة." @endif
                    class="gold-surface mt-2 flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-bold text-ink">
                     <x-heroicon-o-chat-bubble-left-right class="size-5" />
                     احجز عبر واتساب
@@ -131,7 +133,7 @@
     </footer>
 
     {{-- WhatsApp FAB --}}
-    <a href="{{ $whatsappUrl }}" @if($whatsappNumber) target="_blank" rel="noopener noreferrer" @endif
+    <a href="{{ $whatsappUrl }}" @if($whatsappNumber) target="_blank" rel="noopener noreferrer" data-whatsapp-number="{{ $whatsappNumber }}" data-whatsapp-message="مرحباً فخامة مسافر، أرغب في طلب رحلة." @endif
        aria-label="تواصل عبر واتساب"
        class="fixed bottom-5 end-5 z-40 inline-flex size-13 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl shadow-black/40 transition hover:scale-110 active:scale-95">
         <x-heroicon-o-chat-bubble-left-right class="size-6" />

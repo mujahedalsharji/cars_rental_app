@@ -43,14 +43,16 @@
                 {{-- Name --}}
                 <label class="grid gap-1.5 text-xs text-white/60">
                     الاسم الكامل *
-                    <input name="name" required
+                    <input name="name" required data-letters-only autocomplete="name" maxlength="100"
+                           pattern="[\p{L}\p{M} ]+" title="اكتب حروفاً ومسافات فقط"
                            class="min-h-11 rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-white outline-none transition focus:border-gold/60">
                 </label>
 
                 {{-- Phone --}}
                 <label class="grid gap-1.5 text-xs text-white/60">
-                    رقم الهاتف *
-                    <input name="phone" type="tel" required dir="ltr"
+                    رقم الهاتف <span class="text-white/35">(اختياري، 9 أرقام)</span>
+                    <input name="phone" type="tel" data-digits-only dir="ltr" inputmode="numeric" autocomplete="tel"
+                           minlength="9" maxlength="9" pattern="[0-9]{9}" title="أدخل 9 أرقام فقط"
                            class="min-h-11 rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-white outline-none transition focus:border-gold/60">
                 </label>
 
@@ -79,14 +81,16 @@
                 {{-- Pickup --}}
                 <label class="grid gap-1.5 text-xs text-white/60">
                     من *
-                    <input name="pickup" value="{{ request('pickup') }}" required placeholder="موقع الانطلاق"
+                    <input name="pickup" value="{{ request('pickup') }}" required data-letters-only maxlength="150"
+                           pattern="[\p{L}\p{M} ]+" title="اكتب حروفاً ومسافات فقط" placeholder="موقع الانطلاق"
                            class="min-h-11 rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-gold/60">
                 </label>
 
                 {{-- Destination --}}
                 <label class="grid gap-1.5 text-xs text-white/60">
                     إلى *
-                    <input name="destination" value="{{ request('destination') }}" required placeholder="الوجهة"
+                    <input name="destination" value="{{ request('destination') }}" required data-letters-only maxlength="150"
+                           pattern="[\p{L}\p{M} ]+" title="اكتب حروفاً ومسافات فقط" placeholder="الوجهة"
                            class="min-h-11 rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-gold/60">
                 </label>
 
@@ -99,18 +103,19 @@
 
                 {{-- Time --}}
                 <label class="grid gap-1.5 text-xs text-white/60">
-                    الوقت *
-                    <input name="time" type="time" required
+                    الوقت <span class="text-white/35">(اختياري)</span>
+                    <input name="time" type="time"
                            class="min-h-11 rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-white outline-none scheme-dark transition focus:border-gold/60">
                 </label>
 
                 {{-- Passengers --}}
                 <label class="grid gap-1.5 text-xs text-white/60 sm:col-span-2">
-                    عدد الركاب
+                    عدد الركاب <span class="text-white/35">(اختياري)</span>
                     <select name="passengers"
                             class="min-h-11 rounded-xl border border-white/10 bg-ink px-4 text-sm text-white outline-none transition focus:border-gold/60">
+                        <option value="" @selected(blank(request('passengers')))>غير محدد</option>
                         @foreach(range(1, 12) as $count)
-                            <option value="{{ $count }}" @selected((int) request('passengers', 1) === $count)>{{ $count }}</option>
+                            <option value="{{ $count }}" @selected((int) request('passengers') === $count)>{{ $count }}</option>
                         @endforeach
                     </select>
                 </label>

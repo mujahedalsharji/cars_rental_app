@@ -40,7 +40,8 @@
                 <h2 class="font-bold text-white">احجز رحلتك الآن</h2>
             </div>
             <form id="hero-quote-form"
-                  data-whatsapp="{{ $whatsappNumber }}"
+                  data-home-quote-form
+                  data-whatsapp-number="{{ $whatsappNumber }}"
                   class="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_0.8fr_0.8fr_auto]">
                 <label class="grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs text-white/50">
                     <span class="inline-flex items-center gap-2"><x-heroicon-o-map-pin class="size-4 text-gold" /> من</span>
@@ -69,44 +70,94 @@
                 <button type="submit" class="gold-surface min-h-16 rounded-2xl px-7 font-bold text-ink transition hover:brightness-110">طلب عرض</button>
             </form>
 
-            <script>
-                document.getElementById('hero-quote-form').addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    const form    = e.currentTarget;
-                    const wa      = form.dataset.whatsapp;
-                    const pickup  = document.getElementById('hqf-pickup').value.trim();
-                    const dest    = document.getElementById('hqf-destination').value.trim();
-                    const date    = document.getElementById('hqf-date').value;
-                    const service = document.getElementById('hqf-service').value;
-
-                    let msg = '🚗 *طلب عرض سعر — فخامة مسافر*\n\n';
-                    msg += `📋 *نوع الخدمة:* ${service}\n`;
-                    if (pickup)  msg += `📍 *من:* ${pickup}\n`;
-                    if (dest)    msg += `📍 *إلى:* ${dest}\n`;
-                    if (date)    msg += `📅 *التاريخ:* ${date}\n`;
-                    msg += '\nأرجو التواصل لتأكيد الحجز.';
-
-                    const number = wa ? wa : '966500000000';
-                    const url    = `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
-                    window.open(url, '_blank');
-                });
-            </script>
         </div>
     </section>
 
-    <section class="px-5 pb-8 pt-8 lg:px-8">
-        <div class="mx-auto grid max-w-7xl overflow-hidden rounded-2xl border border-white/8 bg-white/[0.025] sm:grid-cols-2 lg:grid-cols-4">
-            @foreach([
-                ['icon' => 'heroicon-o-paper-airplane', 'title' => 'من وإلى المطار'],
-                ['icon' => 'heroicon-o-building-office-2', 'title' => 'جولات سياحية'],
-                ['icon' => 'heroicon-o-map', 'title' => 'رحلات بين المدن'],
-                ['icon' => 'heroicon-o-clock', 'title' => 'سائق بالساعة'],
-            ] as $service)
-                <div class="flex items-center justify-center gap-3 border-b border-white/8 px-5 py-5 text-sm text-white/65 last:border-b-0 sm:border-s sm:first:border-s-0 lg:border-b-0">
-                    <x-dynamic-component :component="$service['icon']" class="size-5 text-gold" />
-                    {{ $service['title'] }}
+    <section class="overflow-hidden px-5 pb-4 pt-16 lg:px-8" aria-labelledby="popular-services-title">
+        <div class="mx-auto max-w-7xl">
+            <div class="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+                <div>
+                    <p class="text-sm font-bold text-gold">الخدمات الأكثر طلباً</p>
+                    <h2 id="popular-services-title" class="mt-3 text-3xl font-extrabold text-white sm:text-4xl">اختر الخدمة المناسبة لرحلتك</h2>
+                    <p class="mt-4 max-w-2xl text-sm leading-7 text-white/55">من استقبال المطار إلى الرحلات بين المدن، نرتب تنقلك كما يناسب وقتك ووجهتك.</p>
                 </div>
-            @endforeach
+                <a href="{{ route('services') }}" class="hidden items-center gap-2 text-sm font-bold text-gold-light transition hover:text-white sm:inline-flex">
+                    جميع الخدمات
+                    <x-heroicon-o-arrow-left class="size-4" />
+                </a>
+            </div>
+
+            <div class="mt-10" data-service-carousel data-autoplay-ms="10000" aria-roledescription="carousel" aria-label="الخدمات الأكثر طلباً">
+                <div data-service-carousel-viewport
+                     class="relative h-[440px] touch-pan-y overflow-hidden sm:h-[460px]"
+                     aria-live="off">
+                    @foreach($popularServices as $service)
+                        <article data-service-carousel-card
+                                 data-carousel-position="{{ $loop->first ? '0' : ($loop->index === 1 ? '1' : ($loop->last ? '-1' : 'far')) }}"
+                                 aria-roledescription="slide"
+                                 aria-label="{{ $loop->iteration }} من {{ $loop->count }}"
+                                 aria-hidden="{{ $loop->first ? 'false' : 'true' }}"
+                                 @if(! $loop->first) inert @endif
+                                 class="service-carousel-card group absolute inset-y-0 left-1/2 w-[82%] max-w-[620px] overflow-hidden rounded-[1.75rem] border border-white/15 bg-panel sm:w-[72%] lg:w-[58%]">
+                            <img src="{{ asset($service['image']) }}"
+                                 alt=""
+                                 width="1536"
+                                 height="1024"
+                                 loading="{{ $loop->first ? 'eager' : 'lazy' }}"
+                                 decoding="async"
+                                 class="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105">
+                            <div class="absolute inset-0 bg-black/15"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent"></div>
+
+                            <div class="absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-5 sm:p-6">
+                                <span class="inline-flex items-center rounded-full border border-gold/30 bg-black/55 px-4 py-2 text-xs font-bold text-gold-light backdrop-blur-md">
+                                    {{ $service['eyebrow'] }}
+                                </span>
+                                <span class="inline-flex size-12 items-center justify-center rounded-2xl border border-gold/25 bg-gold/15 text-gold backdrop-blur-md">
+                                    <x-dynamic-component :component="$service['icon']" class="size-6" />
+                                </span>
+                            </div>
+
+                            <div class="absolute inset-x-0 bottom-0 flex flex-col items-start p-6 sm:p-7">
+                                <h3 class="text-2xl font-extrabold leading-tight text-white drop-shadow-lg sm:text-3xl">{{ $service['card_title'] }}</h3>
+                                <p class="mt-3 line-clamp-3 text-sm font-medium leading-7 text-white/85 drop-shadow-md">{{ $service['description'] }}</p>
+                                <a href="{{ $service['slug'] ? route('services.show', $service['slug']) : route('services') }}"
+                                   class="mt-5 inline-flex min-h-12 items-center gap-3 rounded-xl border border-gold/40 bg-black/50 px-5 py-3 text-sm font-bold text-gold-light backdrop-blur-md transition hover:border-gold hover:bg-gold hover:text-ink">
+                                    تفاصيل الخدمة
+                                    <x-heroicon-o-arrow-left class="size-4" />
+                                </a>
+                            </div>
+                        </article>
+                    @endforeach
+
+                    <div class="pointer-events-none absolute inset-y-0 left-1/2 z-40 w-[82%] max-w-[620px] -translate-x-1/2 sm:w-[72%] lg:w-[58%]">
+                        <button type="button" data-service-carousel-next aria-label="الخدمة التالية"
+                                class="pointer-events-auto absolute start-3 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-gold/35 bg-black/65 text-white shadow-xl backdrop-blur-md transition hover:border-gold hover:bg-gold hover:text-ink sm:start-4">
+                            <x-heroicon-o-chevron-right class="size-5" />
+                        </button>
+                        <button type="button" data-service-carousel-previous aria-label="الخدمة السابقة"
+                                class="pointer-events-auto absolute end-3 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-gold/35 bg-black/65 text-white shadow-xl backdrop-blur-md transition hover:border-gold hover:bg-gold hover:text-ink sm:end-4">
+                            <x-heroicon-o-chevron-left class="size-5" />
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-center gap-2" aria-label="اختيار الخدمة">
+                    @foreach($popularServices as $service)
+                        <button type="button"
+                                data-service-carousel-indicator="{{ $loop->index }}"
+                                aria-label="عرض خدمة {{ $service['card_title'] }}"
+                                @if($loop->first) aria-current="true" @endif
+                                class="h-2.5 rounded-full transition-all {{ $loop->first ? 'w-8 bg-gold' : 'w-2.5 bg-white/25 hover:bg-white/50' }}">
+                        </button>
+                    @endforeach
+                </div>
+
+                <a href="{{ route('services') }}" class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-gold-light transition hover:text-white sm:hidden">
+                    استعرض جميع الخدمات
+                    <x-heroicon-o-arrow-left class="size-4" />
+                </a>
+            </div>
         </div>
     </section>
 

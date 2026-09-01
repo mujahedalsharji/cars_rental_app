@@ -51,6 +51,46 @@
     .panel-glow {
         box-shadow: 0 24px 90px rgb(0 0 0 / 38%);
     }
+
+    .service-carousel-card {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-50%) scale(0.78);
+        transition:
+            transform 650ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 450ms ease,
+            filter 650ms ease;
+        z-index: 0;
+    }
+
+    .service-carousel-card[data-carousel-position='0'] {
+        filter: brightness(1);
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) scale(1);
+        z-index: 30;
+    }
+
+    .service-carousel-card[data-carousel-position='-1'] {
+        filter: brightness(0.55);
+        opacity: 0.72;
+        transform: translateX(22%) scale(0.88);
+        z-index: 20;
+    }
+
+    .service-carousel-card[data-carousel-position='1'] {
+        filter: brightness(0.55);
+        opacity: 0.72;
+        transform: translateX(-122%) scale(0.88);
+        z-index: 20;
+    }
+
+    .service-carousel-card[data-carousel-position='far'] {
+        filter: brightness(0.35);
+        opacity: 0;
+        transform: translateX(-50%) scale(0.78);
+        z-index: 0;
+    }
 }
 
 @media (prefers-reduced-motion: no-preference) {

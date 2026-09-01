@@ -32,6 +32,8 @@
                 </div>
 
                 <a href="{{ $whatsappUrl }}" target="_blank" rel="noopener noreferrer"
+                   data-whatsapp-number="{{ $waNumber }}"
+                   data-whatsapp-message="{{ $service['whatsapp_message'] }}"
                    class="gold-surface inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold text-ink">
                     احجز عبر واتساب
                     <x-heroicon-o-chat-bubble-left-right class="size-5" />
@@ -103,6 +105,8 @@
                 <p class="mt-2 text-sm opacity-75">المدينة والموعد وعدد الركاب والوجهة تكفي لبدء الحجز.</p>
             </div>
             <a href="{{ $whatsappUrl }}" target="_blank" rel="noopener noreferrer"
+               data-whatsapp-number="{{ $waNumber }}"
+               data-whatsapp-message="{{ $service['whatsapp_message'] }}"
                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-ink px-6 py-3.5 text-sm font-bold text-white">
                 ابدأ عبر واتساب
                 <x-heroicon-o-arrow-left class="size-4" />

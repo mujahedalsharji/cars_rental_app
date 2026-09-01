@@ -66,6 +66,8 @@
                                 @else
                                     <a href="https://wa.me/{{ $waNumber }}?text={{ urlencode($service['whatsapp_message']) }}"
                                        target="_blank" rel="noopener noreferrer"
+                                       data-whatsapp-number="{{ $waNumber }}"
+                                       data-whatsapp-message="{{ $service['whatsapp_message'] }}"
                                        class="mt-5 inline-flex items-center gap-2 rounded-xl border border-white/20 bg-black/25 px-4 py-2.5 text-sm font-bold text-gold-light backdrop-blur-sm transition hover:border-gold/50 hover:bg-black/45">
                                         اسأل عن الخدمة
                                         <x-heroicon-o-chat-bubble-left-right class="size-4" />
@@ -124,6 +126,8 @@
             </div>
             <a href="https://wa.me/{{ $waNumber }}?text={{ urlencode('أرغب في الاستفسار عن خدمات فخامة مسافر') }}"
                target="_blank" rel="noopener noreferrer"
+               data-whatsapp-number="{{ $waNumber }}"
+               data-whatsapp-message="أرغب في الاستفسار عن خدمات فخامة مسافر"
                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-ink px-6 py-3.5 text-sm font-bold text-white">
                 تواصل عبر واتساب
                 <x-heroicon-o-chat-bubble-left-right class="size-5" />

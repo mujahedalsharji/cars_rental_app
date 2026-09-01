@@ -7,6 +7,7 @@ use App\Services\BannerService;
 use App\Services\CarService;
 use App\Services\FaqService;
 use App\Services\SettingService;
+use App\Support\ServiceCatalog;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -15,7 +16,8 @@ class HomeController extends Controller
         protected BannerService $bannerService,
         protected CarService $carService,
         protected FaqService $faqService,
-        protected SettingService $settingService
+        protected SettingService $settingService,
+        protected ServiceCatalog $serviceCatalog,
     ) {}
 
     public function index(): View
@@ -25,7 +27,8 @@ class HomeController extends Controller
         $faqs = $this->faqService->getActive()->take(5);
         $settings = $this->settingService->getGroup('company');
         $whatsappNumber = $this->settingService->get('contact.whatsapp_number');
+        $popularServices = $this->serviceCatalog->hubServices();
 
-        return view('pages.home', compact('banners', 'featuredCars', 'faqs', 'settings', 'whatsappNumber'));
+        return view('pages.home', compact('banners', 'featuredCars', 'faqs', 'settings', 'whatsappNumber', 'popularServices'));
     }
 }

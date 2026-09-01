@@ -63,6 +63,25 @@ test('the services hub links to dedicated service pages', function () {
         ->assertDontSee('مصادر الصور وتراخيصها');
 });
 
+test('the homepage displays the popular services carousel before the fleet', function () {
+    $response = $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('data-service-carousel', false)
+        ->assertSee('data-service-carousel-card', false)
+        ->assertSee('data-carousel-position="0"', false)
+        ->assertSee('data-carousel-position="-1"', false)
+        ->assertSee('data-autoplay-ms="10000"', false)
+        ->assertSee(route('services.show', 'car-with-driver'), false)
+        ->assertSee(route('services.show', 'jeddah-airport-to-makkah'), false)
+        ->assertSee('assets/images/services/car-with-driver.webp', false)
+        ->assertSee('الخدمات الأكثر طلباً');
+
+    $content = $response->getContent();
+
+    expect(strpos($content, 'data-service-carousel'))
+        ->toBeLessThan(strpos($content, 'أسطولنا المختار'));
+});
+
 test('dedicated service pages have unique Arabic metadata and canonical URLs', function (string $service, string $title) {
     config()->set('app.url', 'https://fakhamahmosafer.com');
 
@@ -177,6 +196,46 @@ test('an invalid booking car falls back to the general booking form', function (
     $this->get(route('booking', ['car' => 'missing-car']))
         ->assertSuccessful()
         ->assertSee('تفاصيل الطلب');
+});
+
+test('the booking form applies the required and optional field constraints', function () {
+    $this->get(route('booking'))
+        ->assertSuccessful()
+        ->assertSee('data-letters-only', false)
+        ->assertSee('data-digits-only', false)
+        ->assertSee('pattern="[\p{L}\p{M} ]+"', false)
+        ->assertSee('pattern="[0-9]{9}"', false)
+        ->assertSee('minlength="9" maxlength="9"', false)
+        ->assertSee('<option value="" selected>غير محدد</option>', false)
+        ->assertDontSee('name="phone" type="tel" required', false)
+        ->assertDontSee('name="time" type="time" required', false);
+});
+
+test('WhatsApp booking paths are connected to the trip number service', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('name="trip-number-url"', false)
+        ->assertSee(route('trip-numbers.store'), false)
+        ->assertSee('data-home-quote-form', false);
+
+    $this->get(route('services'))
+        ->assertSuccessful()
+        ->assertSee('data-whatsapp-number=', false)
+        ->assertSee('data-whatsapp-message=', false);
+
+    $this->get(route('services.show', 'car-with-driver'))
+        ->assertSuccessful()
+        ->assertSee('data-whatsapp-number=', false)
+        ->assertSee('data-whatsapp-message=', false);
+});
+
+test('the booking page escapes query input before rendering it', function () {
+    $unsafePickup = '\"><script>alert(1)</script>';
+
+    $this->get(route('booking', ['pickup' => $unsafePickup]))
+        ->assertSuccessful()
+        ->assertDontSee('<script>alert(1)</script>', false)
+        ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false);
 });
 
 test('contact form validates required fields', function () {
