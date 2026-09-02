@@ -55,10 +55,18 @@ test('the services hub links to dedicated service pages', function () {
         ->assertSuccessful()
         ->assertSee(route('services.show', 'car-with-driver'), false)
         ->assertSee(route('services.show', 'jeddah-airport-to-makkah'), false)
+        ->assertSee(route('services.show', 'jeddah-airport-taxi'), false)
+        ->assertSee(route('services.show', 'madinah-airport-transfer'), false)
+        ->assertSee(route('services.show', 'taif-airport-to-makkah'), false)
+        ->assertSee(route('services.show', 'jeddah-to-makkah'), false)
         ->assertSee(route('services.show', 'makkah-to-madinah'), false)
         ->assertSee(route('services.show', 'hourly-private-driver'), false)
         ->assertSee('assets/images/services/car-with-driver.webp', false)
         ->assertSee('assets/images/services/jeddah-airport-transfer.webp', false)
+        ->assertSee('assets/images/services/jeddah-airport-taxi.webp', false)
+        ->assertSee('assets/images/services/madinah-airport-transfer.webp', false)
+        ->assertSee('assets/images/services/taif-airport-to-makkah.webp', false)
+        ->assertSee('assets/images/services/jeddah-to-makkah.webp', false)
         ->assertSee('مكة المكرمة')
         ->assertDontSee('مصادر الصور وتراخيصها');
 });
@@ -73,6 +81,10 @@ test('the homepage displays the popular services carousel before the fleet', fun
         ->assertSee('data-autoplay-ms="10000"', false)
         ->assertSee(route('services.show', 'car-with-driver'), false)
         ->assertSee(route('services.show', 'jeddah-airport-to-makkah'), false)
+        ->assertSee(route('services.show', 'jeddah-airport-taxi'), false)
+        ->assertSee(route('services.show', 'madinah-airport-transfer'), false)
+        ->assertSee(route('services.show', 'taif-airport-to-makkah'), false)
+        ->assertSee(route('services.show', 'jeddah-to-makkah'), false)
         ->assertSee('assets/images/services/car-with-driver.webp', false)
         ->assertDontSee('<div class="absolute inset-0 bg-black/15"></div>', false)
         ->assertDontSee('bg-gradient-to-t from-black via-black/55 to-transparent', false)
@@ -107,6 +119,10 @@ test('dedicated service pages have unique Arabic metadata and canonical URLs', f
 })->with([
     'car with driver' => ['car-with-driver', 'سيارة مع سائق في مكة ومدن المملكة'],
     'airport transfer' => ['jeddah-airport-to-makkah', 'توصيل من مطار جدة إلى مكة'],
+    'Jeddah airport taxi' => ['jeddah-airport-taxi', 'تاكسي مطار جدة وسيارة خاصة من وإلى المطار'],
+    'Madinah airport transfer' => ['madinah-airport-transfer', 'توصيل من مطار المدينة المنورة إلى الفندق'],
+    'Taif airport transfer' => ['taif-airport-to-makkah', 'توصيل من مطار الطائف إلى مكة'],
+    'Jeddah to Makkah' => ['jeddah-to-makkah', 'سيارة من جدة إلى مكة مع سائق'],
     'intercity trip' => ['makkah-to-madinah', 'رحلات من مكة إلى المدينة المنورة'],
     'hourly driver' => ['hourly-private-driver', 'خدمة سائق خاص بالساعة'],
 ]);

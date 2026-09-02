@@ -24,6 +24,10 @@ Route::get('/services/{service}', [ServicesController::class, 'show'])
     ->whereIn('service', [
         'car-with-driver',
         'jeddah-airport-to-makkah',
+        'jeddah-airport-taxi',
+        'madinah-airport-transfer',
+        'taif-airport-to-makkah',
+        'jeddah-to-makkah',
         'makkah-to-madinah',
         'hourly-private-driver',
     ])
