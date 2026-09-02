@@ -74,12 +74,24 @@ test('the homepage displays the popular services carousel before the fleet', fun
         ->assertSee(route('services.show', 'car-with-driver'), false)
         ->assertSee(route('services.show', 'jeddah-airport-to-makkah'), false)
         ->assertSee('assets/images/services/car-with-driver.webp', false)
+        ->assertDontSee('<div class="absolute inset-0 bg-black/15"></div>', false)
+        ->assertDontSee('bg-gradient-to-t from-black via-black/55 to-transparent', false)
         ->assertSee('الخدمات الأكثر طلباً');
 
     $content = $response->getContent();
 
     expect(strpos($content, 'data-service-carousel'))
         ->toBeLessThan(strpos($content, 'أسطولنا المختار'));
+});
+
+test('the homepage keeps the fleet button visible and hides the booking button on phone screens', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('px-5 pb-28 pt-16 text-center sm:pb-8 lg:px-8', false)
+        ->assertSee(
+            'href="'.route('booking').'" class="hidden min-h-14 items-center justify-center gap-3 rounded-2xl border border-gold/60 bg-black/30 px-8 font-bold text-white backdrop-blur-md transition hover:bg-gold hover:text-ink sm:inline-flex"',
+            false,
+        );
 });
 
 test('dedicated service pages have unique Arabic metadata and canonical URLs', function (string $service, string $title) {

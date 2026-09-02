@@ -9,7 +9,7 @@
         <div class="hero-vignette absolute inset-0 -z-20"></div>
         <div class="absolute inset-0 -z-10 bg-gradient-to-r from-ink/35 via-transparent to-ink/25"></div>
 
-        <div class="mx-auto flex min-h-[690px] max-w-7xl flex-col items-center justify-between px-5 pb-8 pt-16 text-center lg:px-8" data-reveal>
+        <div class="mx-auto flex min-h-[690px] max-w-7xl flex-col items-center justify-between px-5 pb-28 pt-16 text-center sm:pb-8 lg:px-8" data-reveal>
             <div class="max-w-4xl">
                 <p class="mx-auto inline-flex items-center gap-3 rounded-full border border-gold/35 bg-black/30 px-4 py-2 text-xs font-bold text-gold-light backdrop-blur-md sm:text-sm">
                     <x-heroicon-o-sparkles class="size-4" />
@@ -25,7 +25,7 @@
                     استعرض السيارات
                     <x-heroicon-o-arrow-left class="size-5" />
                 </a>
-                <a href="{{ route('booking') }}" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-gold/60 bg-black/30 px-8 font-bold text-white backdrop-blur-md transition hover:bg-gold hover:text-ink">
+                <a href="{{ route('booking') }}" class="hidden min-h-14 items-center justify-center gap-3 rounded-2xl border border-gold/60 bg-black/30 px-8 font-bold text-white backdrop-blur-md transition hover:bg-gold hover:text-ink sm:inline-flex">
                     احجز رحلتك
                     <x-heroicon-o-calendar-days class="size-5" />
                 </a>
@@ -106,8 +106,6 @@
                                  loading="{{ $loop->first ? 'eager' : 'lazy' }}"
                                  decoding="async"
                                  class="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105">
-                            <div class="absolute inset-0 bg-black/15"></div>
-                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent"></div>
 
                             <div class="absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-5 sm:p-6">
                                 <span class="inline-flex items-center rounded-full border border-gold/30 bg-black/55 px-4 py-2 text-xs font-bold text-gold-light backdrop-blur-md">
